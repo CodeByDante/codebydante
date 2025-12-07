@@ -12,7 +12,6 @@ import { UniversalVideoExtension } from './extensions/UniversalVideoExtension';
 import { CustomCodeBlock } from './extensions/CustomCodeBlock';
 import { CustomButton } from './extensions/CustomButton';
 import { EditorToolbar } from './EditorToolbar';
-import { EditorContextMenu } from './EditorContextMenu';
 import { StyleSettingsPanel } from './StyleSettingsPanel';
 import { EditorSelectionWrapper } from './EditorSelectionWrapper';
 import { QuoteStyleConfig, DEFAULT_QUOTE_STYLE, DEFAULT_CODE_STYLE, StyleConfig, saveStyleConfigToCloud, DEFAULT_STYLE_CONFIG, subscribeToStyleConfig } from '../services/codeStyleService';
@@ -76,7 +75,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     const [editingBlockIndex, setEditingBlockIndex] = useState<number | null>(null);
     const [isFocused, setIsFocused] = useState(false);
     const [toolbarVisible, setToolbarVisible] = useState(!showToolbarOnFocus);
-    const [contextMenuPos, setContextMenuPos] = useState<{ x: number, y: number } | null>(null);
+    // contextMenuPos state removed as context menu is disabled
 
     useEffect(() => {
         if (!showToolbarOnFocus) {
@@ -112,21 +111,9 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
         });
     };
 
-    const handleContextMenu = (e: React.MouseEvent) => {
-        if (styleConfig.general?.interactionMode !== 'context-menu') return;
 
-        e.preventDefault();
-        setContextMenuPos({ x: e.clientX, y: e.clientY });
-    };
 
     // Close context menu on click anywhere
-    useEffect(() => {
-        const handleClick = () => {
-            if (contextMenuPos) setContextMenuPos(null);
-        };
-        document.addEventListener('click', handleClick);
-        return () => document.removeEventListener('click', handleClick);
-    }, [contextMenuPos]);
 
     const editor = useEditor({
 
@@ -218,14 +205,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
         },
         editorProps: {
             handleDOMEvents: {
-                contextmenu: (view, event) => {
-                    if (styleConfig.general?.interactionMode === 'context-menu') {
-                        event.preventDefault();
-                        setContextMenuPos({ x: event.clientX, y: event.clientY });
-                        return true;
-                    }
-                    return false;
-                }
+                // Context menu handler removed
             },
             attributes: {
                 class: `prose prose-invert max-w-none focus:outline-none ${dense ? 'min-h-[40px]' : 'min-h-[50px]'} !h-auto prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-p:text-gray-300 prose-p:leading-relaxed prose-p:my-3 prose-blockquote:not-italic prose-pre:bg-[#000000] prose-pre:text-gray-300 prose-code:text-primary prose-code:rounded prose-code:px-1 prose-code:py-1 prose-code:leading-relaxed prose-code:decoration-clone prose-code:before:content-none prose-code:after:content-none prose-hr:border-white/10 ${className}`,
@@ -398,7 +378,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
             className={`tiptap-editor-container w-full flex flex-col relative h-auto ${className}`}
             onFocus={handleFocus}
             onBlur={handleBlur}
-            onContextMenu={handleContextMenu}
+
         >
             <div className={`transition-opacity duration-200 ${isEditable && toolbarVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
                 <EditorToolbar
@@ -412,7 +392,6 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
                         setIsSettingsOpen(true);
                     }}
                     onSave={onSave}
-                    minimalMode={styleConfig.general?.interactionMode === 'context-menu'}
                 />
             </div>
             <div
@@ -428,19 +407,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
                 </EditorSelectionWrapper>
             </div>
 
-            {contextMenuPos && (
-                <EditorContextMenu
-                    editor={editor}
-                    x={contextMenuPos.x}
-                    y={contextMenuPos.y}
-                    onClose={() => setContextMenuPos(null)}
-                    onOpenSettings={() => {
-                        setContextMenuPos(null);
-                        setEditingBlockIndex(null);
-                        setIsSettingsOpen(true);
-                    }}
-                />
-            )}
+
 
             {isSettingsOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">

@@ -22,9 +22,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const COLLECTION_NAME = 'code_style_config';
 
-export interface GeneralConfig {
-  interactionMode: 'floating' | 'context-menu';
-}
+export interface GeneralConfig { }
 
 export interface QuoteStyleConfig {
   textColor: string;
@@ -81,9 +79,7 @@ export interface StyleConfig {
   showCopyButton: boolean;
 }
 
-export const DEFAULT_GENERAL_STYLE: GeneralConfig = {
-  interactionMode: 'floating'
-};
+export const DEFAULT_GENERAL_STYLE: GeneralConfig = {};
 
 export const DEFAULT_QUOTE_STYLE: QuoteStyleConfig = {
   textColor: '#9ca3af',
@@ -176,9 +172,7 @@ export const loadStyleConfigFromCloud = async (): Promise<StyleConfig | null> =>
     if (docSnap.exists()) {
       const data = docSnap.data();
       return {
-        general: {
-          interactionMode: data.general?.interactionMode || DEFAULT_GENERAL_STYLE.interactionMode
-        },
+        general: {},
         code: {
           textColor: data.code?.textColor || DEFAULT_CODE_STYLE.textColor,
           bgColor: data.code?.bgColor || DEFAULT_CODE_STYLE.bgColor,
@@ -241,9 +235,7 @@ export const subscribeToStyleConfig = (callback: (config: StyleConfig) => void) 
     if (docSnap.exists()) {
       const data = docSnap.data();
       const config: StyleConfig = {
-        general: {
-          interactionMode: data.general?.interactionMode || DEFAULT_GENERAL_STYLE.interactionMode
-        },
+        general: {},
         code: {
           textColor: data.code?.textColor || DEFAULT_CODE_STYLE.textColor,
           bgColor: data.code?.bgColor || DEFAULT_CODE_STYLE.bgColor,
@@ -302,9 +294,7 @@ export const subscribeToStyleConfig = (callback: (config: StyleConfig) => void) 
     if (docSnap.exists()) {
       const data = docSnap.data();
       const config: StyleConfig = {
-        general: {
-          interactionMode: data.general?.interactionMode || DEFAULT_GENERAL_STYLE.interactionMode
-        },
+        general: {},
         code: {
           textColor: data.code?.textColor || DEFAULT_CODE_STYLE.textColor,
           bgColor: data.code?.bgColor || DEFAULT_CODE_STYLE.bgColor,

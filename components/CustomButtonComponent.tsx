@@ -45,7 +45,7 @@ export const CustomButtonComponent: React.FC<NodeViewProps> = ({ node, getPos, e
     };
 
     return (
-        <NodeViewWrapper className="inline-block mx-1 align-middle"> {/* Reverted to inline-block to allow typing next to it */}
+        <NodeViewWrapper className="inline-block mx-1 align-middle" style={{ maxWidth: '100%' }}> {/* Reverted to inline-block to allow typing next to it */}
             <a
                 href={url}
                 target="_blank"
