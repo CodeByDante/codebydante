@@ -12,7 +12,7 @@ import {
     Play, Plus, Power, Printer, Radio, RotateCw,
     Save, Search, Send, Settings, Share, Shield,
     ShoppingBag, ShoppingCart, Info, Star, Sun, Tag,
-    ThumbsUp, Tool, Trash, Truck, Tv, Unlock,
+    ThumbsUp, PenTool, Trash, Truck, Tv, Unlock,
     Upload, User, Users, Wifi, X
 } from 'lucide-react';
 
@@ -95,7 +95,7 @@ const ICON_MAP: Record<string, React.FC<any>> = {
     'sun': Sun,
     'tag': Tag,
     'thumbs-up': ThumbsUp,
-    'tool': Tool,
+    'tool': PenTool,
     'trash': Trash,
     'truck': Truck,
     'tv': Tv,
@@ -140,7 +140,7 @@ export const IconPicker: React.FC<IconPickerProps> = ({ selectedIcon, onSelect }
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-12 h-[46px] rounded-lg border border-white/10 bg-background hover:bg-white/5 flex items-center justify-center transition-colors text-gray-400 hover:text-white"
+                className="w-12 h-[46px] rounded-lg border border-white/10 bg-background hover:bg-white/5 flex items-center justify-center transition-colors text-gray-400 hover:text-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                 title="Seleccionar icono"
             >
                 {SelectedIconComponent ? (

@@ -29,6 +29,8 @@ interface TipTapEditorProps {
     className?: string;
     extensions?: Extension[];
     dense?: boolean;
+    cardStyle?: 'bordered' | 'transparent' | 'filled';
+    onCardStyleChange?: (style: 'bordered' | 'transparent' | 'filled') => void;
 }
 
 export const TipTapEditor: React.FC<TipTapEditorProps> = ({
@@ -42,7 +44,9 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     showToolbarOnFocus = false,
     className = '',
     extensions = [],
-    dense = false
+    dense = false,
+    cardStyle,
+    onCardStyleChange
 }) => {
     // Custom extension to handle ArrowDown at the end of the document
     const ArrowDownHandler = Extension.create({
@@ -440,6 +444,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
 
             {isSettingsOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+                    {console.log('[TipTapEditor] Opening Settings. editingBlockIndex:', editingBlockIndex, 'cardStyle passed:', cardStyle)}
                     <div className="bg-[#1e1e1e] rounded-xl shadow-2xl w-full max-w-2xl h-[85vh] flex flex-col overflow-hidden border border-white/10">
                         <StyleSettingsPanel
                             styleConfig={getSettingsPanelConfig()}
@@ -510,6 +515,8 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
                             }}
                             hideTabs={false}
                             previewContent="Este es un ejemplo de cómo se verán tus citas con la configuración actual."
+                            cardStyle={cardStyle}
+                            onCardStyleChange={onCardStyleChange}
                         />
                     </div>
                 </div>

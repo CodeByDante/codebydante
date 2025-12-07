@@ -35,6 +35,18 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
   const summaryTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [pendingModalOpen, setPendingModalOpen] = useState(false);
 
+  const getCardClasses = (style?: 'bordered' | 'transparent' | 'filled') => {
+    switch (style) {
+      case 'filled':
+        return 'bg-surface border border-white/5 shadow-xl';
+      case 'transparent':
+        return 'bg-transparent border-none shadow-none';
+      case 'bordered':
+      default:
+        return 'bg-transparent border border-white/10 shadow-none'; // Default to "bordered" as per latest "transparent" refined look
+    }
+  };
+
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
     title: string;
@@ -72,7 +84,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
       tags: editedItem.tags,
       blocks: editedItem.blocks,
       visitUrl: editedItem.visitUrl,
-      downloadUrl: editedItem.downloadUrl
+      downloadUrl: editedItem.downloadUrl,
+      cardStyle: editedItem.cardStyle
     });
     setIsEditMode(false);
   };
@@ -258,7 +271,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
 
             <div className="space-y-3">
               {editedItem.blocks && editedItem.blocks.map((block, index) => (
-                <div key={block.id} className="bg-[#1c1c1c] rounded-lg border border-white/10 overflow-hidden">
+                <div key={block.id} className={`${getCardClasses(editedItem.cardStyle)} rounded-lg overflow-hidden transition-all duration-300`}>
                   <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/5">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-medium text-gray-500">Bloque {index + 1}</span>
@@ -304,6 +317,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
                       onBlockDoubleClick={(type, idx) => handleBlockDoubleClick(type, idx, block.id)}
                       dense={true}
                       className="min-h-[40px]"
+                      cardStyle={editedItem.cardStyle || 'bordered'}
+                      onCardStyleChange={(style) => setEditedItem(prev => ({ ...prev, cardStyle: style }))}
                     />
                   </div>
                 </div>
@@ -315,43 +330,70 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
         </div>
 
         <div style={{ display: !showEditTab ? 'block' : 'none' }}>
-          <div className="bg-surface h-fit rounded-xl p-6 border border-white/5 shadow-xl relative mb-8">
-            <div className="absolute top-5 right-5 flex gap-2 z-20">
-              {editedItem.visitUrl && (
-                <a href={editedItem.visitUrl} target="_blank" rel="noopener noreferrer" className="pointer-events-none opacity-70">
-                  <Button
-                    variant="outline"
-                    className="!py-1.5 !px-3 text-xs h-8"
-                  >
-                    <ExternalLink size={14} /> <span className="hidden sm:inline">Visitar</span>
-                  </Button>
-                </a>
-              )}
+          <div className={`relative mb-8 p-6 rounded-xl ${getCardClasses(editedItem.cardStyle)}`}>
+            <div className="absolute top-5 right-5 z-20 flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleCancelEdit}
+                className="!py-1.5 !px-3 text-xs h-8 bg-black/40 hover:bg-black/60 border-white/10"
+              >
+                <X size={14} /> <span className="hidden sm:inline">Cancelar</span>
 
-              {editedItem.downloadUrl && (
-                <a href={editedItem.downloadUrl} target="_blank" rel="noopener noreferrer" className="pointer-events-none opacity-70">
-                  <Button
-                    variant="outline"
-                    className="!py-1.5 !px-3 text-xs h-8"
-                  >
-                    <Download size={14} /> <span className="hidden sm:inline">Descargar</span>
-                  </Button>
-                </a>
-              )}
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleSaveChanges}
+                className="!py-1.5 !px-3 text-xs h-8"
+              >
+                <Save size={14} /> <span className="hidden sm:inline">Guardar</span>
+              </Button>
             </div>
 
-            <h1
-              className="text-2xl md:text-3xl font-bold text-white mb-3 pr-32 [&>p]:inline [&>p]:m-0"
-              dangerouslySetInnerHTML={{ __html: editedItem.title || 'Título' }}
-            />
+            <div className="mb-6">
+              <label className="block text-xs font-medium text-gray-500 uppercase mb-2">Icono</label>
+              <IconPicker
+                selectedIcon={editedItem.icon || 'Layout'}
+                onSelect={(icon) => setEditedItem(prev => ({ ...prev, icon }))}
+              />
+            </div>
 
-            <TipTapEditor
-              content={editedItem.summary || '<p>Resumen</p>'}
-              onUpdate={() => { }}
-              isEditable={false}
-              className="text-gray-300 text-base leading-relaxed max-w-4xl mb-4 [&>p]:m-0 min-h-0"
-              dense={true}
-            />
+            <div className="mb-6">
+              <label className="block text-xs font-medium text-gray-500 uppercase mb-2">Título</label>
+              <TipTapEditor
+                content={editedItem.title}
+                onUpdate={(content) => {
+                  // Start editing title
+                  if (typeof content === 'string') {
+                    setEditedItem(prev => ({ ...prev, title: content }));
+                  }
+                }}
+                isEditable={true}
+                dense={true}
+                className="min-h-[40px] text-2xl font-bold"
+                showToolbarOnFocus={true}
+                cardStyle={editedItem.cardStyle || 'bordered'}
+                onCardStyleChange={(style) => setEditedItem(prev => ({ ...prev, cardStyle: style }))}
+              />
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-xs font-medium text-gray-500 uppercase mb-2">Resumen</label>
+              <TipTapEditor
+                content={editedItem.summary}
+                onUpdate={(content) => {
+                  // Update summary
+                  if (typeof content === 'string') {
+                    setEditedItem(prev => ({ ...prev, summary: content }));
+                  }
+                }}
+                isEditable={true}
+                dense={true}
+                className="min-h-[80px]"
+                showToolbarOnFocus={true}
+                cardStyle={editedItem.cardStyle || 'bordered'}
+                onCardStyleChange={(style) => setEditedItem(prev => ({ ...prev, cardStyle: style }))}
+              />
+            </div>
 
             {editedItem.tags.length > 0 && (
               <div className="flex flex-wrap items-center gap-2 pt-4 border-t border-white/5">
@@ -367,7 +409,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
           {editedItem.blocks && editedItem.blocks.length > 0 && (
             <div className="space-y-6 mb-8">
               {editedItem.blocks.map((block) => (
-                <div key={block.id} className="bg-surface h-fit rounded-xl border border-white/5 shadow-lg overflow-hidden p-6">
+                <div key={block.id} className={`${getCardClasses(editedItem.cardStyle)} h-fit rounded-xl overflow-hidden p-6 transition-all duration-300`}>
                   <TipTapEditor
                     content={block.content}
                     onUpdate={() => { }}
@@ -412,7 +454,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
         <ArrowLeft size={18} /> Volver al Inicio
       </button>
 
-      <div className="bg-surface h-fit rounded-xl p-6 border border-white/5 shadow-xl relative mb-8">
+      <div className={`${getCardClasses(item.cardStyle)} h-fit rounded-xl p-6 relative mb-8`}>
         <div className="absolute top-5 right-5 flex gap-2 z-20">
           {item.visitUrl && (
             <a href={item.visitUrl} target="_blank" rel="noopener noreferrer">
@@ -486,7 +528,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
       {item.blocks && item.blocks.length > 0 && (
         <div className="space-y-6 mb-8">
           {item.blocks.map((block) => (
-            <div key={block.id} className="bg-surface h-fit rounded-xl border border-white/5 shadow-lg overflow-hidden p-6">
+            <div key={block.id} className={`${getCardClasses(item.cardStyle)} h-fit rounded-xl overflow-hidden p-6 transition-all duration-300`}>
               <TipTapEditor
                 content={block.content}
                 onUpdate={() => { }}

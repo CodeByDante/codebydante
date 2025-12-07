@@ -7,6 +7,7 @@ export interface ContentBlock {
 export interface DataItem {
   id: string;
   icon?: string;
+  cardStyle?: 'bordered' | 'transparent' | 'filled'; // New field for card styling
   title: string;
   summary: string;
   content: string; // Kept for backward compatibility and search

@@ -1,6 +1,7 @@
 import React from 'react';
 import { DataItem } from '../types';
 import { Download, ExternalLink } from 'lucide-react';
+import { getIconComponent } from './IconPicker';
 
 interface CardProps {
   item: DataItem;
@@ -9,16 +10,25 @@ interface CardProps {
 }
 
 export const Card: React.FC<CardProps> = ({ item, onClick, viewMode }) => {
+  console.log('[Card] Rendering item:', item.title, 'Icon:', item.icon);
+  const Icon = getIconComponent(item.icon);
   return (
     <div
       onClick={() => onClick(item)}
       className="group bg-surface border border-white/5 hover:border-primary/30 rounded-xl p-6 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl flex flex-col h-full min-h-[220px]"
     >
       <div className="mb-4 flex-grow flex flex-col">
-        <h3
-          className={`text-lg font-bold text-white mb-2 group-hover:text-primary transition-colors line-clamp-3 ${viewMode === 'code' ? 'font-mono' : ''} [&>p]:m-0 [&>p]:inline`}
-          dangerouslySetInnerHTML={{ __html: item.title }}
-        />
+        <div className="flex items-start gap-2">
+          {Icon && (
+            <div className="text-primary shrink-0">
+              <Icon size={24} />
+            </div>
+          )}
+          <h3
+            className={`text-lg font-bold text-white mb-2 group-hover:text-primary transition-colors line-clamp-3 ${viewMode === 'code' ? 'font-mono' : ''} [&>p]:m-0 [&>p]:inline`}
+            dangerouslySetInnerHTML={{ __html: item.title }}
+          />
+        </div>
         <div
           className={`text-zinc-400 text-xs leading-relaxed flex-grow line-clamp-4 ${viewMode === 'code' ? 'font-mono' : ''} [&>p]:m-0`}
           dangerouslySetInnerHTML={{ __html: item.summary }}

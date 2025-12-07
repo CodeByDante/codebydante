@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, X, Check } from 'lucide-react';
+import { Settings, X, Check, Save } from 'lucide-react';
 import { StyleConfig } from '../services/codeStyleService';
 import { CustomBlockquote } from './CustomBlockquote';
 
@@ -13,6 +13,8 @@ interface StyleSettingsPanelProps {
     onConfirm?: (config: StyleConfig) => void;
     previewContent?: string;
     hideTabs?: boolean;
+    cardStyle?: 'bordered' | 'transparent' | 'filled';
+    onCardStyleChange?: (style: 'bordered' | 'transparent' | 'filled') => void;
 }
 
 export const StyleSettingsPanel: React.FC<StyleSettingsPanelProps> = ({
@@ -23,8 +25,11 @@ export const StyleSettingsPanel: React.FC<StyleSettingsPanelProps> = ({
     onClose,
     onConfirm,
     previewContent,
-    hideTabs = false
+    hideTabs = false,
+    cardStyle,
+    onCardStyleChange
 }) => {
+    console.log('[StyleSettingsPanel] Render. onCardStyleChange present?', !!onCardStyleChange, 'activeTab:', activeTab, 'cardStyle:', cardStyle);
 
     const [localConfig, setLocalConfig] = React.useState<StyleConfig>(styleConfig);
 
@@ -33,6 +38,10 @@ export const StyleSettingsPanel: React.FC<StyleSettingsPanelProps> = ({
     React.useEffect(() => {
         setLocalConfig(styleConfig);
     }, [styleConfig]);
+
+    if (!localConfig || !localConfig.general || !localConfig.quote || !localConfig.code || !localConfig.button) {
+        return null;
+    }
 
     const rgbToHex = (rgba: string): string => {
         const match = rgba.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
@@ -181,6 +190,79 @@ export const StyleSettingsPanel: React.FC<StyleSettingsPanelProps> = ({
 
                 {activeTab === 'general' && (
                     <div className="space-y-6">
+                        {/* Card Style Config */}
+                        <div className="bg-white/5 rounded-lg p-4 border border-white/5">
+                            <h4 className="text-sm font-medium text-white mb-2">Estilo de Tarjeta</h4>
+                            <p className="text-xs text-gray-400 mb-4">
+                                Personaliza la apariencia de esta tarjeta.
+                            </p>
+
+                            {!onCardStyleChange && (
+                                <div className="mb-3 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded text-xs text-yellow-500">
+                                    Esta opción no está disponible en este contexto.
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-1 gap-3">
+                                <label className={`flex items-center justify-between p-3 rounded-lg border transition-all ${!onCardStyleChange ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${cardStyle === 'bordered'
+                                    ? 'bg-primary/10 border-primary'
+                                    : 'bg-black/20 border-white/5 hover:bg-white/5'
+                                    }`}>
+                                    <div className="flex flex-col">
+                                        <span className={`text-sm font-medium ${cardStyle === 'bordered' ? 'text-white' : 'text-gray-300'}`}>Borde y Sin Fondo</span>
+                                        <span className="text-[10px] text-gray-500">Solo borde visible, fondo transparente.</span>
+                                    </div>
+                                    <input
+                                        type="radio"
+                                        name="cardStyle"
+                                        value="bordered"
+                                        checked={cardStyle === 'bordered'}
+                                        onChange={() => onCardStyleChange && onCardStyleChange('bordered')}
+                                        disabled={!onCardStyleChange}
+                                        className="w-4 h-4 accent-primary"
+                                    />
+                                </label>
+
+                                <label className={`flex items-center justify-between p-3 rounded-lg border transition-all ${!onCardStyleChange ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${cardStyle === 'transparent'
+                                    ? 'bg-primary/10 border-primary'
+                                    : 'bg-black/20 border-white/5 hover:bg-white/5'
+                                    }`}>
+                                    <div className="flex flex-col">
+                                        <span className={`text-sm font-medium ${cardStyle === 'transparent' ? 'text-white' : 'text-gray-300'}`}>Sin Fondo</span>
+                                        <span className="text-[10px] text-gray-500">Completamente transparente, sin borde.</span>
+                                    </div>
+                                    <input
+                                        type="radio"
+                                        name="cardStyle"
+                                        value="transparent"
+                                        checked={cardStyle === 'transparent'}
+                                        onChange={() => onCardStyleChange && onCardStyleChange('transparent')}
+                                        disabled={!onCardStyleChange}
+                                        className="w-4 h-4 accent-primary"
+                                    />
+                                </label>
+
+                                <label className={`flex items-center justify-between p-3 rounded-lg border transition-all ${!onCardStyleChange ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${cardStyle === 'filled'
+                                    ? 'bg-primary/10 border-primary'
+                                    : 'bg-black/20 border-white/5 hover:bg-white/5'
+                                    }`}>
+                                    <div className="flex flex-col">
+                                        <span className={`text-sm font-medium ${cardStyle === 'filled' ? 'text-white' : 'text-gray-300'}`}>Con Fondo</span>
+                                        <span className="text-[10px] text-gray-500">Fondo sólido visible.</span>
+                                    </div>
+                                    <input
+                                        type="radio"
+                                        name="cardStyle"
+                                        value="filled"
+                                        checked={cardStyle === 'filled'}
+                                        onChange={() => onCardStyleChange && onCardStyleChange('filled')}
+                                        disabled={!onCardStyleChange}
+                                        className="w-4 h-4 accent-primary"
+                                    />
+                                </label>
+                            </div>
+                        </div>
+
                         <div className="bg-white/5 rounded-lg p-4 border border-white/5">
                             <h4 className="text-sm font-medium text-white mb-2">Modo de Interacción</h4>
                             <p className="text-xs text-gray-400 mb-4">
@@ -189,8 +271,8 @@ export const StyleSettingsPanel: React.FC<StyleSettingsPanelProps> = ({
 
                             <div className="flex flex-col gap-3">
                                 <label className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${localConfig.general?.interactionMode === 'floating'
-                                        ? 'bg-primary/10 border-primary'
-                                        : 'bg-black/20 border-white/5 hover:bg-white/5'
+                                    ? 'bg-primary/10 border-primary'
+                                    : 'bg-black/20 border-white/5 hover:bg-white/5'
                                     }`}>
                                     <div className="flex flex-col">
                                         <span className={`text-sm font-medium ${localConfig.general?.interactionMode === 'floating' ? 'text-white' : 'text-gray-300'}`}>Barra Flotante</span>
@@ -210,8 +292,8 @@ export const StyleSettingsPanel: React.FC<StyleSettingsPanelProps> = ({
                                 </label>
 
                                 <label className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${localConfig.general?.interactionMode === 'context-menu'
-                                        ? 'bg-primary/10 border-primary'
-                                        : 'bg-black/20 border-white/5 hover:bg-white/5'
+                                    ? 'bg-primary/10 border-primary'
+                                    : 'bg-black/20 border-white/5 hover:bg-white/5'
                                     }`}>
                                     <div className="flex flex-col">
                                         <span className={`text-sm font-medium ${localConfig.general?.interactionMode === 'context-menu' ? 'text-white' : 'text-gray-300'}`}>Menú Contextual (Clic Derecho)</span>
@@ -292,6 +374,7 @@ export const StyleSettingsPanel: React.FC<StyleSettingsPanelProps> = ({
 
                 {activeTab === 'codeblock' && (
                     <>
+                        {console.log('StyleSettingsPanel Render. onCardStyleChange:', !!onCardStyleChange, onCardStyleChange)}
                         <div className="space-y-4 mt-4">
                             <h4 className="text-sm font-medium text-white mb-2">Comportamiento de Bloques de Código</h4>
                             <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
@@ -773,16 +856,11 @@ export const StyleSettingsPanel: React.FC<StyleSettingsPanelProps> = ({
                     }}
                     className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2 shadow-lg"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    <Save size={20} />
                     Guardar Configuración
                 </button>
             </div>
-
-
-
-
-
-        </div >
+        </div>
     );
 };
 
