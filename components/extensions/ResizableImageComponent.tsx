@@ -119,7 +119,7 @@ export const ResizableImageComponent = (props: any) => {
 
     return (
         <NodeViewWrapper style={containerStyle} className="resizable-image-wrapper group">
-            <div className={`relative inline-block transition-all ${selected ? 'ring-2 ring-primary rounded-lg' : ''}`}>
+            <div className={`relative inline-block transition-all ${selected && editor.isEditable ? 'ring-2 ring-primary rounded-lg' : ''}`}>
                 {node.attrs.href ? (
                     <a
                         href={node.attrs.href}

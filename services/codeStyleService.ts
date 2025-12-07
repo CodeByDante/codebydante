@@ -22,6 +22,10 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const COLLECTION_NAME = 'code_style_config';
 
+export interface GeneralConfig {
+  interactionMode: 'floating' | 'context-menu';
+}
+
 export interface QuoteStyleConfig {
   textColor: string;
   bgColor: string;
@@ -52,6 +56,8 @@ export interface CodeStyleConfig {
   showBackground: boolean;
   lineHeight: string;
   collapsible: boolean;
+  showLineNumbers: boolean;
+  wrapText: boolean;
 }
 
 export interface LinkStyleConfig {
@@ -67,12 +73,17 @@ export interface ButtonStyleConfig {
 }
 
 export interface StyleConfig {
+  general: GeneralConfig;
   code: CodeStyleConfig;
   quote: QuoteStyleConfig;
   link: LinkStyleConfig;
   button: ButtonStyleConfig;
   showCopyButton: boolean;
 }
+
+export const DEFAULT_GENERAL_STYLE: GeneralConfig = {
+  interactionMode: 'floating'
+};
 
 export const DEFAULT_QUOTE_STYLE: QuoteStyleConfig = {
   textColor: '#9ca3af',
@@ -103,7 +114,9 @@ export const DEFAULT_CODE_STYLE: CodeStyleConfig = {
   fontFamily: "'Consolas', 'Monaco', monospace",
   showBackground: true,
   lineHeight: '1.5',
-  collapsible: true
+  collapsible: true, // Collapsible enabled by default for new blocks
+  showLineNumbers: false,
+  wrapText: false
 };
 
 export const DEFAULT_LINK_STYLE: LinkStyleConfig = {
@@ -119,6 +132,7 @@ export const DEFAULT_BUTTON_STYLE: ButtonStyleConfig = {
 };
 
 export const DEFAULT_STYLE_CONFIG: StyleConfig = {
+  general: DEFAULT_GENERAL_STYLE,
   code: DEFAULT_CODE_STYLE,
   quote: DEFAULT_QUOTE_STYLE,
   link: DEFAULT_LINK_STYLE,
@@ -162,6 +176,9 @@ export const loadStyleConfigFromCloud = async (): Promise<StyleConfig | null> =>
     if (docSnap.exists()) {
       const data = docSnap.data();
       return {
+        general: {
+          interactionMode: data.general?.interactionMode || DEFAULT_GENERAL_STYLE.interactionMode
+        },
         code: {
           textColor: data.code?.textColor || DEFAULT_CODE_STYLE.textColor,
           bgColor: data.code?.bgColor || DEFAULT_CODE_STYLE.bgColor,
@@ -174,6 +191,8 @@ export const loadStyleConfigFromCloud = async (): Promise<StyleConfig | null> =>
           showBackground: data.code?.showBackground !== undefined ? data.code.showBackground : DEFAULT_CODE_STYLE.showBackground,
           lineHeight: data.code?.lineHeight || DEFAULT_CODE_STYLE.lineHeight,
           collapsible: data.code?.collapsible !== undefined ? data.code.collapsible : DEFAULT_CODE_STYLE.collapsible,
+          showLineNumbers: data.code?.showLineNumbers !== undefined ? data.code.showLineNumbers : DEFAULT_CODE_STYLE.showLineNumbers,
+          wrapText: data.code?.wrapText !== undefined ? data.code.wrapText : DEFAULT_CODE_STYLE.wrapText
         },
         quote: {
           textColor: data.quote?.textColor || DEFAULT_QUOTE_STYLE.textColor,
@@ -222,6 +241,9 @@ export const subscribeToStyleConfig = (callback: (config: StyleConfig) => void) 
     if (docSnap.exists()) {
       const data = docSnap.data();
       const config: StyleConfig = {
+        general: {
+          interactionMode: data.general?.interactionMode || DEFAULT_GENERAL_STYLE.interactionMode
+        },
         code: {
           textColor: data.code?.textColor || DEFAULT_CODE_STYLE.textColor,
           bgColor: data.code?.bgColor || DEFAULT_CODE_STYLE.bgColor,
@@ -234,6 +256,8 @@ export const subscribeToStyleConfig = (callback: (config: StyleConfig) => void) 
           showBackground: data.code?.showBackground !== undefined ? data.code.showBackground : DEFAULT_CODE_STYLE.showBackground,
           lineHeight: data.code?.lineHeight || DEFAULT_CODE_STYLE.lineHeight,
           collapsible: data.code?.collapsible !== undefined ? data.code.collapsible : DEFAULT_CODE_STYLE.collapsible,
+          showLineNumbers: data.code?.showLineNumbers !== undefined ? data.code.showLineNumbers : DEFAULT_CODE_STYLE.showLineNumbers,
+          wrapText: data.code?.wrapText !== undefined ? data.code.wrapText : DEFAULT_CODE_STYLE.wrapText
         },
         quote: {
           textColor: data.quote?.textColor || DEFAULT_QUOTE_STYLE.textColor,
@@ -278,6 +302,9 @@ export const subscribeToStyleConfig = (callback: (config: StyleConfig) => void) 
     if (docSnap.exists()) {
       const data = docSnap.data();
       const config: StyleConfig = {
+        general: {
+          interactionMode: data.general?.interactionMode || DEFAULT_GENERAL_STYLE.interactionMode
+        },
         code: {
           textColor: data.code?.textColor || DEFAULT_CODE_STYLE.textColor,
           bgColor: data.code?.bgColor || DEFAULT_CODE_STYLE.bgColor,
@@ -290,6 +317,8 @@ export const subscribeToStyleConfig = (callback: (config: StyleConfig) => void) 
           showBackground: data.code?.showBackground !== undefined ? data.code.showBackground : DEFAULT_CODE_STYLE.showBackground,
           lineHeight: data.code?.lineHeight || DEFAULT_CODE_STYLE.lineHeight,
           collapsible: data.code?.collapsible !== undefined ? data.code.collapsible : DEFAULT_CODE_STYLE.collapsible,
+          showLineNumbers: data.code?.showLineNumbers !== undefined ? data.code.showLineNumbers : DEFAULT_CODE_STYLE.showLineNumbers,
+          wrapText: data.code?.wrapText !== undefined ? data.code.wrapText : DEFAULT_CODE_STYLE.wrapText
         },
         quote: {
           textColor: data.quote?.textColor || DEFAULT_QUOTE_STYLE.textColor,

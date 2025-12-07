@@ -13,15 +13,22 @@ export const UniversalVideoExtension = Node.create({
         return {
             src: {
                 default: null,
+                parseHTML: element => element.getAttribute('data-src'),
+                renderHTML: attributes => ({
+                    'data-src': attributes.src,
+                }),
             },
             width: {
                 default: '100%',
+                parseHTML: element => element.getAttribute('data-width') || element.style.width,
                 renderHTML: (attributes) => ({
-                    width: attributes.width,
+                    'data-width': attributes.width,
+                    style: `width: ${attributes.width}`,
                 }),
             },
             align: {
                 default: 'center',
+                parseHTML: element => element.getAttribute('data-align'),
                 renderHTML: (attributes) => ({
                     'data-align': attributes.align,
                     style: `float: ${attributes.align === 'left' ? 'left' : attributes.align === 'right' ? 'right' : 'none'}; display: ${attributes.align === 'center' ? 'block' : 'inline-block'}; margin: ${attributes.align === 'center' ? '0 auto' : '0 1rem 0.5rem 0'}`,

@@ -15,6 +15,15 @@ export const QuoteComponent: React.FC<NodeViewProps> = (props) => {
         if (contentRef.current) {
             setContentHeight(contentRef.current.scrollHeight);
         }
+
+        const handleResize = () => {
+            if (contentRef.current) {
+                setContentHeight(contentRef.current.scrollHeight);
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
     }, [node.textContent, isManualExpanded]);
 
     const toggleExpand = () => {
@@ -74,7 +83,7 @@ export const QuoteComponent: React.FC<NodeViewProps> = (props) => {
     };
 
     const isEditing = props.editor.isEditable;
-    const isCollapsed = attrs.collapsible && !isManualExpanded && !isEditing;
+    const isCollapsed = attrs.collapsible && !isManualExpanded;
 
     return (
         <NodeViewWrapper
@@ -112,7 +121,7 @@ export const QuoteComponent: React.FC<NodeViewProps> = (props) => {
                 ref={contentRef}
                 style={{
                     // Si está colapsado, forzamos una altura máxima (aprox 3 líneas)
-                    maxHeight: isCollapsed ? '4.5em' : (isEditing ? 'none' : `${contentHeight}px`),
+                    maxHeight: isCollapsed ? '4.5em' : `${contentHeight}px`,
                     overflow: 'hidden',
                     position: 'relative',
                     transition: 'max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1)', // Smooth slide animation

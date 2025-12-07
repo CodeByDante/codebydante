@@ -4,7 +4,7 @@ import { Copy, Check, Download, Pencil, ChevronDown, ChevronUp } from 'lucide-re
 
 export const CodeBlockComponent: React.FC<NodeViewProps> = (props) => {
     const [copied, setCopied] = useState(false);
-    const { node: { attrs: { language: defaultLanguage, filename: defaultFilename } }, updateAttributes, extension } = props;
+    const { node: { attrs: { language: defaultLanguage, filename: defaultFilename, showLineNumbers, wrapText } }, updateAttributes, extension } = props;
     const [detectedLang, setDetectedLang] = useState(defaultLanguage || 'text');
     const [isEditingName, setIsEditingName] = useState(false);
     const [filename, setFilename] = useState(defaultFilename || '');
@@ -47,7 +47,16 @@ export const CodeBlockComponent: React.FC<NodeViewProps> = (props) => {
         if (contentRef.current) {
             setContentHeight(contentRef.current.scrollHeight);
         }
-    }, [props.node.textContent, isManualExpanded]);
+
+        const handleResize = () => {
+            if (contentRef.current) {
+                setContentHeight(contentRef.current.scrollHeight);
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [props.node.textContent, isManualExpanded, showLineNumbers, wrapText]); // Added dependencies
 
     useEffect(() => {
         if (isEditingName && inputRef.current) {
@@ -113,6 +122,8 @@ export const CodeBlockComponent: React.FC<NodeViewProps> = (props) => {
     };
 
     const isCollapsed = props.node.attrs.collapsible && !isManualExpanded;
+
+    const lineCount = props.node.textContent.split('\n').length;
 
     return (
         <NodeViewWrapper
@@ -186,16 +197,31 @@ export const CodeBlockComponent: React.FC<NodeViewProps> = (props) => {
             <div
                 ref={contentRef}
                 style={{
-                    maxHeight: isCollapsed ? '300px' : 'none',
+                    maxHeight: props.node.attrs.collapsible
+                        ? (isCollapsed ? '300px' : `${contentHeight}${typeof contentHeight === 'number' ? 'px' : ''}`)
+                        : 'none',
                     overflow: 'hidden',
                     transition: 'max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
                     position: 'relative',
                     maskImage: isCollapsed ? 'linear-gradient(to bottom, black 60%, transparent 100%)' : 'none',
-                    WebkitMaskImage: isCollapsed ? 'linear-gradient(to bottom, black 60%, transparent 100%)' : 'none'
+                    WebkitMaskImage: isCollapsed ? 'linear-gradient(to bottom, black 60%, transparent 100%)' : 'none',
+                    display: 'flex',
+                    alignItems: 'stretch'
                 }}
             >
-                <pre className="!m-0 !p-5 !bg-[#151515] overflow-x-auto">
-                    <NodeViewContent as="code" className="font-mono text-sm text-zinc-300 leading-relaxed" />
+                {showLineNumbers && !wrapText && (
+                    <div
+                        className="flex-none p-5 text-right select-none bg-[#1a1a1a] border-r border-white/5 text-zinc-600 font-mono text-sm leading-relaxed"
+                        style={{ minWidth: '3rem' }}
+                        contentEditable={false}
+                    >
+                        {Array.from({ length: lineCount }).map((_, i) => (
+                            <div key={i}>{i + 1}</div>
+                        ))}
+                    </div>
+                )}
+                <pre className={`flex-1 !m-0 !p-5 !bg-[#151515] ${wrapText ? 'whitespace-pre-wrap word-break-all' : 'overflow-x-auto'}`}>
+                    <NodeViewContent as="code" className="font-mono text-sm text-zinc-300 leading-relaxed block" />
                 </pre>
             </div>
 

@@ -52,7 +52,8 @@ interface EditorToolbarProps {
     defaultQuoteStyles?: QuoteStyleConfig;
     linkStyleConfig?: LinkStyleConfig;
     codeStyleConfig?: CodeStyleConfig;
-    buttonStyleConfig?: any; // Using any or importing ButtonStyleConfig
+    buttonStyleConfig?: any;
+    minimalMode?: boolean;
 }
 
 export const EditorToolbar: React.FC<EditorToolbarProps> = ({
@@ -62,7 +63,8 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
     defaultQuoteStyles,
     linkStyleConfig,
     codeStyleConfig,
-    buttonStyleConfig
+    buttonStyleConfig,
+    minimalMode = false
 }) => {
     const [hasSelection, setHasSelection] = useState(false);
     const [showLinkInput, setShowLinkInput] = useState(false);
@@ -99,11 +101,6 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
 
     const handleAction = (e: React.MouseEvent, action: () => void) => {
         e.preventDefault();
-
-        if (editor.state.selection.empty) {
-            return;
-        }
-
         action();
     };
 
@@ -151,9 +148,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
     const handleQuoteClick = (e: React.MouseEvent) => {
         e.preventDefault();
 
-        if (editor.state.selection.empty) {
-            return;
-        }
+        // Allow quote creation even with empty selection (it will wrap the current block)
 
         if (editor.isActive('customBlockquote')) {
             editor.chain().focus().unsetBlockquote().run();
@@ -188,20 +183,23 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
     const handleCodeClick = (e: React.MouseEvent) => {
         e.preventDefault();
 
-        if (editor.state.selection.empty) {
-            return;
-        }
+        // Allow toggle for typing
+        // if (editor.state.selection.empty) {
+        //     return;
+        // }
 
         const isCodeActive = editor.isActive('code');
         const currentAttributes = editor.getAttributes('code');
         const wantsBackground = codeStyleConfig?.showBackground ?? true;
 
         if (isCodeActive) {
-            if (currentAttributes.showBackground === false) {
-                // Switch to standard inline code
+            const currentShowBackground = currentAttributes.showBackground ?? true;
+
+            // If the current state doesn't match the preference, update it
+            if (currentShowBackground !== wantsBackground) {
                 editor.chain().focus().updateAttributes('code', { showBackground: wantsBackground }).run();
             } else {
-                // Toggle off
+                // If it matches, toggle it off (remove mark)
                 editor.chain().focus().unsetMark('code').run();
             }
         } else {
@@ -214,9 +212,10 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
     const handleCardCodeClick = (e: React.MouseEvent) => {
         e.preventDefault();
 
-        if (editor.state.selection.empty) {
-            return;
-        }
+        // Allow toggle for typing
+        // if (editor.state.selection.empty) {
+        //     return;
+        // }
 
         const isCodeActive = editor.isActive('code');
         const currentAttributes = editor.getAttributes('code');
@@ -353,178 +352,173 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
 
     return (
         <>
-            <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full bg-zinc-900/90 backdrop-blur-md border border-white/10 shadow-2xl px-4 py-2 transition-all duration-200">
-                <ToolbarButton
-                    onMouseDown={(e) => handleAction(e, () => editor.chain().focus().toggleHeading({ level: 1 }).run())}
-                    isActive={editor.isActive('heading', { level: 1 })}
-                    disabled={!hasSelection}
-                    icon={<Heading1 size={18} />}
-                    title="Título 1"
-                />
-                <ToolbarButton
-                    onMouseDown={(e) => handleAction(e, () => editor.chain().focus().toggleHeading({ level: 2 }).run())}
-                    isActive={editor.isActive('heading', { level: 2 })}
-                    disabled={!hasSelection}
-                    icon={<Heading2 size={18} />}
-                    title="Título 2"
-                />
-                <ToolbarButton
-                    onMouseDown={(e) => handleAction(e, () => editor.chain().focus().setParagraph().run())}
-                    isActive={editor.isActive('paragraph')}
-                    disabled={!hasSelection}
-                    icon={<Pilcrow size={18} />}
-                    title="Párrafo"
-                />
+            <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full bg-zinc-900/90 backdrop-blur-md border border-white/10 shadow-2xl px-4 py-2 transition-all duration-300 ease-in-out">
 
-                <div className="w-px h-4 bg-white/10 mx-1" />
+                <div
+                    className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-in-out ${minimalMode ? 'w-0 opacity-0 pointer-events-none' : 'w-auto opacity-100'
+                        }`}
+                >
+                    <ToolbarButton
+                        onMouseDown={(e) => handleAction(e, () => editor.chain().focus().toggleHeading({ level: 1 }).run())}
+                        isActive={editor.isActive('heading', { level: 1 })}
+                        icon={<Heading1 size={18} />}
+                        title="Título 1"
+                    />
+                    <ToolbarButton
+                        onMouseDown={(e) => handleAction(e, () => editor.chain().focus().toggleHeading({ level: 2 }).run())}
+                        isActive={editor.isActive('heading', { level: 2 })}
+                        icon={<Heading2 size={18} />}
+                        title="Título 2"
+                    />
+                    <ToolbarButton
+                        onMouseDown={(e) => handleAction(e, () => editor.chain().focus().setParagraph().run())}
+                        isActive={editor.isActive('paragraph')}
+                        icon={<Pilcrow size={18} />}
+                        title="Párrafo"
+                    />
 
-                <ToolbarButton
-                    onMouseDown={(e) => handleAction(e, () => editor.chain().focus().toggleBold().run())}
-                    isActive={editor.isActive('bold')}
-                    disabled={!hasSelection}
-                    icon={<Bold size={18} />}
-                    title="Negrita"
-                />
-                <ToolbarButton
-                    onMouseDown={(e) => handleAction(e, () => editor.chain().focus().toggleItalic().run())}
-                    isActive={editor.isActive('italic')}
-                    disabled={!hasSelection}
-                    icon={<Italic size={18} />}
-                    title="Cursiva"
-                />
-                <ToolbarButton
-                    onMouseDown={handleLink}
-                    isActive={editor.isActive('link') || (editor.isActive('image') && !!editor.getAttributes('image').href)}
-                    disabled={!hasSelection && !editor.isActive('image')}
-                    icon={<LinkIcon size={18} />}
-                    title="Enlace"
-                />
-                <ToolbarButton
-                    onMouseDown={handleCodeClick}
-                    isActive={editor.isActive('code') && editor.getAttributes('code').showBackground !== false}
-                    icon={<Code size={18} />}
-                    title="Código Inline"
-                />
-                <ToolbarButton
-                    onMouseDown={handleCardCodeClick}
-                    isActive={editor.isActive('code') && editor.getAttributes('code').showBackground === false}
-                    icon={<Terminal size={18} />}
-                    title="Texto Estilo Tarjeta"
-                />
-                <ToolbarButton
-                    onMouseDown={(e) => {
-                        e.preventDefault();
-                        editor.chain().focus().setCodeBlock({
-                            collapsible: codeStyleConfig?.collapsible ?? true
-                        }).run();
-                    }}
-                    isActive={editor.isActive('codeBlock')}
-                    icon={<FileCode size={18} />}
-                    title="Bloque de Código"
-                />
+                    <div className="w-px h-4 bg-white/10 mx-1 shrink-0" />
 
-                <ToolbarButton
-                    onMouseDown={handleClearFormatting}
-                    isActive={false}
-                    icon={<Eraser size={18} />}
-                    title="Limpiar Formato"
-                />
+                    <ToolbarButton
+                        onMouseDown={(e) => handleAction(e, () => editor.chain().focus().toggleBold().run())}
+                        isActive={editor.isActive('bold')}
+                        icon={<Bold size={18} />}
+                        title="Negrita"
+                    />
+                    <ToolbarButton
+                        onMouseDown={(e) => handleAction(e, () => editor.chain().focus().toggleItalic().run())}
+                        isActive={editor.isActive('italic')}
+                        icon={<Italic size={18} />}
+                        title="Cursiva"
+                    />
+                    <ToolbarButton
+                        onMouseDown={handleLink}
+                        isActive={editor.isActive('link') || (editor.isActive('image') && !!editor.getAttributes('image').href)}
+                        disabled={!hasSelection && !editor.isActive('image')}
+                        icon={<LinkIcon size={18} />}
+                        title="Enlace"
+                    />
+                    <ToolbarButton
+                        onMouseDown={handleCodeClick}
+                        isActive={editor.isActive('code') && editor.getAttributes('code').showBackground !== false}
+                        icon={<Code size={18} />}
+                        title="Código Inline"
+                    />
+                    <ToolbarButton
+                        onMouseDown={handleCardCodeClick}
+                        isActive={editor.isActive('code') && editor.getAttributes('code').showBackground === false}
+                        icon={<Terminal size={18} />}
+                        title="Texto Estilo Tarjeta"
+                    />
+                    <ToolbarButton
+                        onMouseDown={(e) => {
+                            e.preventDefault();
+                            editor.chain().focus().setCodeBlock({
+                                language: 'text' // Set a default language if required or just keep it simple
+                            }).updateAttributes('codeBlock', {
+                                collapsible: codeStyleConfig?.collapsible ?? true,
+                                showLineNumbers: codeStyleConfig?.showLineNumbers ?? false,
+                                wrapText: codeStyleConfig?.wrapText ?? false
+                            }).run();
+                        }}
+                        isActive={editor.isActive('codeBlock')}
+                        icon={<FileCode size={18} />}
+                        title="Bloque de Código"
+                    />
 
-                <div className="w-px h-4 bg-white/10 mx-1" />
+                    <ToolbarButton
+                        onMouseDown={handleClearFormatting}
+                        isActive={false}
+                        icon={<Eraser size={18} />}
+                        title="Limpiar Formato"
+                    />
 
-                <ToolbarButton
-                    onMouseDown={(e) => { e.preventDefault(); handleImageUploadClick(); }}
-                    isActive={false}
-                    icon={isUploading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <ImageIcon size={18} />}
-                    title="Subir Imagen"
-                />
-                <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    accept="image/*"
-                    className="hidden"
-                />
+                    <div className="w-px h-4 bg-white/10 mx-1 shrink-0" />
 
-                <ToolbarButton
-                    onMouseDown={handleVideoClick}
-                    isActive={false}
-                    icon={<Video size={18} />}
-                    title="Insertar Video de YouTube"
-                />
+                    <ToolbarButton
+                        onMouseDown={(e) => { e.preventDefault(); handleImageUploadClick(); }}
+                        isActive={false}
+                        icon={isUploading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <ImageIcon size={18} />}
+                        title="Subir Imagen"
+                    />
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept="image/*"
+                        className="hidden"
+                    />
 
-                <ToolbarButton
-                    onMouseDown={handleButtonClick}
-                    isActive={false}
-                    icon={<MousePointerClick size={18} />}
-                    title="Insertar Botón de Acción"
-                />
+                    <ToolbarButton
+                        onMouseDown={handleVideoClick}
+                        isActive={false}
+                        icon={<Video size={18} />}
+                        title="Insertar Video de YouTube"
+                    />
 
+                    <ToolbarButton
+                        onMouseDown={handleButtonClick}
+                        isActive={false}
+                        icon={<MousePointerClick size={18} />}
+                        title="Insertar Botón de Acción"
+                    />
 
+                    <div className="w-px h-4 bg-white/10 mx-1 shrink-0" />
 
-                <div className="w-px h-4 bg-white/10 mx-1" />
+                    <ToolbarButton
+                        onMouseDown={(e) => handleAction(e, () => handleAlign('left'))}
+                        isActive={isAlignActive('left')}
+                        icon={<AlignLeft size={18} />}
+                        title="Alinear a la izquierda"
+                    />
+                    <ToolbarButton
+                        onMouseDown={(e) => handleAction(e, () => handleAlign('center'))}
+                        isActive={isAlignActive('center')}
+                        icon={<AlignCenter size={18} />}
+                        title="Centrar"
+                    />
+                    <ToolbarButton
+                        onMouseDown={(e) => handleAction(e, () => handleAlign('right'))}
+                        isActive={isAlignActive('right')}
+                        icon={<AlignRight size={18} />}
+                        title="Alinear a la derecha"
+                    />
+                    <ToolbarButton
+                        onMouseDown={(e) => handleAction(e, () => handleAlign('justify'))}
+                        isActive={isAlignActive('justify')}
+                        icon={<AlignJustify size={18} />}
+                        title="Justificar"
+                    />
 
-                <ToolbarButton
-                    onMouseDown={(e) => handleAction(e, () => handleAlign('left'))}
-                    isActive={isAlignActive('left')}
-                    disabled={!hasSelection && !editor.isActive('universalVideo') && !editor.isActive('image')}
-                    icon={<AlignLeft size={18} />}
-                    title="Alinear a la izquierda"
-                />
-                <ToolbarButton
-                    onMouseDown={(e) => handleAction(e, () => handleAlign('center'))}
-                    isActive={isAlignActive('center')}
-                    disabled={!hasSelection && !editor.isActive('universalVideo') && !editor.isActive('image')}
-                    icon={<AlignCenter size={18} />}
-                    title="Centrar"
-                />
-                <ToolbarButton
-                    onMouseDown={(e) => handleAction(e, () => handleAlign('right'))}
-                    isActive={isAlignActive('right')}
-                    disabled={!hasSelection && !editor.isActive('universalVideo') && !editor.isActive('image')}
-                    icon={<AlignRight size={18} />}
-                    title="Alinear a la derecha"
-                />
-                <ToolbarButton
-                    onMouseDown={(e) => handleAction(e, () => handleAlign('justify'))}
-                    isActive={isAlignActive('justify')}
-                    disabled={!hasSelection && !editor.isActive('universalVideo') && !editor.isActive('image')}
-                    icon={<AlignJustify size={18} />}
-                    title="Justificar"
-                />
+                    <div className="w-px h-4 bg-white/10 mx-1 shrink-0" />
 
-                <div className="w-px h-4 bg-white/10 mx-1" />
+                    <ToolbarButton
+                        onMouseDown={(e) => handleAction(e, () => editor.chain().focus().toggleBulletList().run())}
+                        isActive={editor.isActive('bulletList')}
+                        icon={<List size={18} />}
+                        title="Lista con viñetas"
+                    />
+                    <ToolbarButton
+                        onMouseDown={(e) => handleAction(e, () => editor.chain().focus().toggleOrderedList().run())}
+                        isActive={editor.isActive('orderedList')}
+                        icon={<ListOrdered size={18} />}
+                        title="Lista numerada"
+                    />
 
-                <ToolbarButton
-                    onMouseDown={(e) => handleAction(e, () => editor.chain().focus().toggleBulletList().run())}
-                    isActive={editor.isActive('bulletList')}
-                    disabled={!hasSelection}
-                    icon={<List size={18} />}
-                    title="Lista con viñetas"
-                />
-                <ToolbarButton
-                    onMouseDown={(e) => handleAction(e, () => editor.chain().focus().toggleOrderedList().run())}
-                    isActive={editor.isActive('orderedList')}
-                    disabled={!hasSelection}
-                    icon={<ListOrdered size={18} />}
-                    title="Lista numerada"
-                />
+                    <div className="w-px h-4 bg-white/10 mx-1 shrink-0" />
 
-                <div className="w-px h-4 bg-white/10 mx-1" />
+                    <ToolbarButton
+                        onMouseDown={handleQuoteClick}
+                        isActive={editor.isActive('customBlockquote')}
+                        icon={<Quote size={18} />}
+                        title="Cita Personalizada"
+                    />
 
-                <ToolbarButton
-                    onMouseDown={handleQuoteClick}
-                    isActive={editor.isActive('customBlockquote')}
-                    disabled={!hasSelection}
-                    icon={<Quote size={18} />}
-                    title="Cita Personalizada"
-                />
-
-
+                </div>
 
                 {onOpenSettings && (
                     <>
-                        <div className="w-px h-4 bg-white/10 mx-1" />
+                        <div className={`w-px h-4 bg-white/10 mx-1 shrink-0 transition-opacity duration-300 ${minimalMode ? 'opacity-0' : 'opacity-100'}`} />
                         <ToolbarButton
                             onMouseDown={(e) => {
                                 e.preventDefault();
@@ -532,7 +526,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                             }}
                             isActive={false}
                             icon={<Settings size={18} />}
-                            title="Configurar Estilo de Citas"
+                            title="Configurar Estilo"
                         />
                     </>
                 )}
@@ -551,17 +545,18 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                                 if (e.key === 'Enter') saveLink();
                                 if (e.key === 'Escape') setShowLinkInput(false);
                             }}
-                            autoFocus
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
                         />
                         <button
-                            onClick={saveLink}
+                            onClick={(e) => { e.stopPropagation(); saveLink(); }}
                             className="p-1.5 rounded-lg bg-primary text-background hover:opacity-90 transition-opacity"
                             title="Guardar enlace"
                         >
                             <Check size={16} strokeWidth={2.5} />
                         </button>
                         <button
-                            onClick={() => setShowLinkInput(false)}
+                            onClick={(e) => { e.stopPropagation(); setShowLinkInput(false); }}
                             className="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
                             title="Cancelar"
                         >
@@ -572,7 +567,10 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
             }
 
             {showVideoInput && (
-                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 p-2 rounded-xl bg-[#1a1a1a] border border-white/10 shadow-2xl animate-fade-in">
+                <div
+                    className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 p-2 rounded-xl bg-[#1a1a1a] border border-white/10 shadow-2xl animate-fade-in"
+                    onMouseDown={(e) => e.stopPropagation()}
+                >
                     <input
                         type="url"
                         value={videoUrl}
@@ -583,17 +581,19 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                             if (e.key === 'Enter') saveVideo();
                             if (e.key === 'Escape') setShowVideoInput(false);
                         }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
                         autoFocus
                     />
                     <button
-                        onClick={saveVideo}
+                        onClick={(e) => { e.stopPropagation(); saveVideo(); }}
                         className="p-1.5 rounded-lg bg-primary text-background hover:opacity-90 transition-opacity"
                         title="Confirmar video"
                     >
                         <Check size={16} strokeWidth={2.5} />
                     </button>
                     <button
-                        onClick={() => setShowVideoInput(false)}
+                        onClick={(e) => { e.stopPropagation(); setShowVideoInput(false); }}
                         className="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
                         title="Cancelar"
                     >
@@ -603,13 +603,18 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
             )}
 
             {showButtonInput && (
-                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 p-2 rounded-xl bg-[#1a1a1a] border border-white/10 shadow-2xl animate-fade-in w-[240px]">
+                <div
+                    className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 p-2 rounded-xl bg-[#1a1a1a] border border-white/10 shadow-2xl animate-fade-in w-[240px]"
+                    onMouseDown={(e) => e.stopPropagation()}
+                >
                     <input
                         type="text"
                         value={buttonText}
                         onChange={(e) => setButtonText(e.target.value)}
                         placeholder="Texto"
                         className="bg-transparent border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-primary w-full"
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
                         autoFocus
                     />
                     <input
@@ -618,6 +623,8 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                         onChange={(e) => setButtonUrl(e.target.value)}
                         placeholder="URL"
                         className="bg-transparent border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-primary w-full"
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
                     />
                     <div className="grid grid-cols-4 gap-1">
                         <button

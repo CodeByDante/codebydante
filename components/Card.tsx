@@ -12,15 +12,17 @@ export const Card: React.FC<CardProps> = ({ item, onClick, viewMode }) => {
   return (
     <div
       onClick={() => onClick(item)}
-      className="group bg-surface border border-white/5 hover:border-primary/30 rounded-xl p-6 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl flex flex-col h-full min-h-[200px]"
+      className="group bg-surface border border-white/5 hover:border-primary/30 rounded-xl p-6 cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl flex flex-col h-full min-h-[220px]"
     >
       <div className="mb-4 flex-grow flex flex-col">
-        <h3 className={`text-lg font-bold text-white mb-2 group-hover:text-primary transition-colors line-clamp-3 ${viewMode === 'code' ? 'font-mono' : ''}`}>
-          {item.title}
-        </h3>
-        <p className={`text-zinc-400 text-xs leading-relaxed flex-grow line-clamp-4 ${viewMode === 'code' ? 'font-mono' : ''}`}>
-          {item.summary}
-        </p>
+        <h3
+          className={`text-lg font-bold text-white mb-2 group-hover:text-primary transition-colors line-clamp-3 ${viewMode === 'code' ? 'font-mono' : ''} [&>p]:m-0 [&>p]:inline`}
+          dangerouslySetInnerHTML={{ __html: item.title }}
+        />
+        <div
+          className={`text-zinc-400 text-xs leading-relaxed flex-grow line-clamp-4 ${viewMode === 'code' ? 'font-mono' : ''} [&>p]:m-0`}
+          dangerouslySetInnerHTML={{ __html: item.summary }}
+        />
       </div>
 
 

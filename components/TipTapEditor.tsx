@@ -12,6 +12,7 @@ import { UniversalVideoExtension } from './extensions/UniversalVideoExtension';
 import { CustomCodeBlock } from './extensions/CustomCodeBlock';
 import { CustomButton } from './extensions/CustomButton';
 import { EditorToolbar } from './EditorToolbar';
+import { EditorContextMenu } from './EditorContextMenu';
 import { StyleSettingsPanel } from './StyleSettingsPanel';
 import { EditorSelectionWrapper } from './EditorSelectionWrapper';
 import { QuoteStyleConfig, DEFAULT_QUOTE_STYLE, DEFAULT_CODE_STYLE, StyleConfig, saveStyleConfigToCloud, DEFAULT_STYLE_CONFIG, subscribeToStyleConfig } from '../services/codeStyleService';
@@ -24,6 +25,10 @@ interface TipTapEditorProps {
     onBlockDoubleClick?: (type: 'code' | 'quote', index: number) => void;
     onSave?: () => void;
     autoFocus?: boolean;
+    showToolbarOnFocus?: boolean;
+    className?: string;
+    extensions?: Extension[];
+    dense?: boolean;
 }
 
 export const TipTapEditor: React.FC<TipTapEditorProps> = ({
@@ -33,7 +38,11 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     editorRef,
     onBlockDoubleClick,
     onSave,
-    autoFocus = false
+    autoFocus = false,
+    showToolbarOnFocus = false,
+    className = '',
+    extensions = [],
+    dense = false
 }) => {
     // Custom extension to handle ArrowDown at the end of the document
     const ArrowDownHandler = Extension.create({
@@ -58,11 +67,65 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     });
 
     const [styleConfig, setStyleConfig] = useState<StyleConfig>(DEFAULT_STYLE_CONFIG);
-    const [activeTab, setActiveTab] = useState<'code' | 'quote' | 'link' | 'general' | 'button'>('quote');
+    const [activeTab, setActiveTab] = useState<'code' | 'quote' | 'link' | 'general' | 'button' | 'codeblock'>('quote');
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [editingBlockIndex, setEditingBlockIndex] = useState<number | null>(null);
+    const [isFocused, setIsFocused] = useState(false);
+    const [toolbarVisible, setToolbarVisible] = useState(!showToolbarOnFocus);
+    const [contextMenuPos, setContextMenuPos] = useState<{ x: number, y: number } | null>(null);
+
+    useEffect(() => {
+        if (!showToolbarOnFocus) {
+            setToolbarVisible(true);
+        }
+    }, [showToolbarOnFocus]);
+
+    useEffect(() => {
+        if (showToolbarOnFocus) {
+            if (isFocused) {
+                setToolbarVisible(true);
+            } else {
+                setToolbarVisible(false);
+            }
+        }
+    }, [isFocused, showToolbarOnFocus]);
+
+    const handleFocus = () => {
+        setIsFocused(true);
+        if (showToolbarOnFocus) setToolbarVisible(true);
+    };
+
+    const handleBlur = (e: React.FocusEvent) => {
+        // Check if the new focus is still within the editor container
+        const currentTarget = e.currentTarget;
+
+        // Give a small timeout to allow focus to settle (e.g. clicking a button)
+        requestAnimationFrame(() => {
+            if (!currentTarget.contains(document.activeElement)) {
+                setIsFocused(false);
+                if (showToolbarOnFocus) setToolbarVisible(false);
+            }
+        });
+    };
+
+    const handleContextMenu = (e: React.MouseEvent) => {
+        if (styleConfig.general?.interactionMode !== 'context-menu') return;
+
+        e.preventDefault();
+        setContextMenuPos({ x: e.clientX, y: e.clientY });
+    };
+
+    // Close context menu on click anywhere
+    useEffect(() => {
+        const handleClick = () => {
+            if (contextMenuPos) setContextMenuPos(null);
+        };
+        document.addEventListener('click', handleClick);
+        return () => document.removeEventListener('click', handleClick);
+    }, [contextMenuPos]);
 
     const editor = useEditor({
+
         extensions: [
             StarterKit.configure({
                 heading: false, // Disable default heading to use custom configuration
@@ -100,13 +163,17 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
                     return {
                         showBackground: {
                             default: true,
+                            parseHTML: element => element.getAttribute('data-show-background') !== 'false',
                             renderHTML: attributes => {
                                 if (!attributes.showBackground) {
                                     return {
+                                        'data-show-background': 'false',
                                         style: 'background-color: transparent !important; color: inherit !important; padding: 0 !important;',
                                     };
                                 }
-                                return {};
+                                return {
+                                    'data-show-background': 'true',
+                                };
                             },
                         },
                     };
@@ -121,19 +188,45 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
                 },
             }),
             ArrowDownHandler,
+            ...extensions
         ],
         content: content,
         editable: isEditable,
         autofocus: autoFocus,
         onUpdate: ({ editor }) => {
-            onUpdate(editor.getJSON());
+            // Check if onUpdate expects an object or just the content
+            // The interface says (content: any) => void
+            // We'll pass both HTML and JSON if possible, but the signature usually expects one arg
+            // If the consumer expects JSON, we pass JSON.
+            // But for Title/Summary we want HTML.
+            // Let's pass an object with both, OR check usage.
+            // Existing usage: onUpdate(editor.getJSON())
+            // We should change this to allow the parent to decide, or just pass the editor instance context?
+            // "onUpdate" prop in DetailView expects "content: any".
+            // I will change it to return `editor.getHTML()` if `showToolbarOnFocus` is true, otherwise `editor.getJSON()`.
+            // This is a heuristic but matches the use case (Title/Summary = HTML string, Blocks = JSON).
+
+            if (showToolbarOnFocus) {
+                onUpdate(editor.getHTML());
+            } else {
+                onUpdate(editor.getJSON());
+            }
         },
         editorProps: {
+            handleDOMEvents: {
+                contextmenu: (view, event) => {
+                    if (styleConfig.general?.interactionMode === 'context-menu') {
+                        event.preventDefault();
+                        setContextMenuPos({ x: event.clientX, y: event.clientY });
+                        return true;
+                    }
+                    return false;
+                }
+            },
             attributes: {
-                class: 'prose prose-invert max-w-none focus:outline-none min-h-[50px] !h-auto prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-p:text-gray-300 prose-blockquote:not-italic prose-pre:bg-[#000000] prose-pre:text-gray-300 prose-code:text-primary prose-code:bg-primary/10 prose-code:rounded prose-code:px-1 prose-code:py-1 prose-code:leading-[var(--code-line-height)] prose-code:decoration-clone prose-code:before:content-none prose-code:after:content-none prose-hr:border-white/10',
+                class: `prose prose-invert max-w-none focus:outline-none ${dense ? 'min-h-[40px]' : 'min-h-[50px]'} !h-auto prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-p:text-gray-300 prose-p:leading-relaxed prose-p:my-3 prose-blockquote:not-italic prose-pre:bg-[#000000] prose-pre:text-gray-300 prose-code:text-primary prose-code:rounded prose-code:px-1 prose-code:py-1 prose-code:leading-relaxed prose-code:decoration-clone prose-code:before:content-none prose-code:after:content-none prose-hr:border-white/10 ${className}`,
                 style: `
                     --code-font-family: ${styleConfig.code.fontFamily};
-                    --code-line-height: ${styleConfig.code.lineHeight || '1.5'};
                 `
             },
         },
@@ -208,7 +301,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
                 } else if (type === 'code') {
                     setEditingBlockIndex(pos);
                     setIsSettingsOpen(true);
-                    setActiveTab('code'); // Switch to code tab
+                    setActiveTab('codeblock'); // Switch to codeblock tab
                 } else if (onBlockDoubleClick) {
                     // Keep existing behavior for code blocks if needed, or handle similarly
                     onBlockDoubleClick('code', index);
@@ -237,7 +330,14 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     // Update content if it changes externally (and is different)
     useEffect(() => {
         if (editor && content && JSON.stringify(editor.getJSON()) !== JSON.stringify(content)) {
-            editor.commands.setContent(content);
+            // Specialized content set for HTML string vs JSON
+            if (typeof content === 'string') {
+                if (editor.getHTML() !== content) {
+                    editor.commands.setContent(content);
+                }
+            } else {
+                editor.commands.setContent(content);
+            }
         }
     }, [content, editor]);
 
@@ -290,8 +390,13 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
     };
 
     return (
-        <div className="tiptap-editor-container w-full flex flex-col relative h-auto">
-            {isEditable && (
+        <div
+            className={`tiptap-editor-container w-full flex flex-col relative h-auto ${className}`}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            onContextMenu={handleContextMenu}
+        >
+            <div className={`transition-opacity duration-200 ${isEditable && toolbarVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
                 <EditorToolbar
                     editor={editor}
                     defaultQuoteStyles={styleConfig.quote}
@@ -303,10 +408,11 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
                         setIsSettingsOpen(true);
                     }}
                     onSave={onSave}
+                    minimalMode={styleConfig.general?.interactionMode === 'context-menu'}
                 />
-            )}
+            </div>
             <div
-                className="h-auto pb-24 text-zinc-100 cursor-text flex flex-col items-start"
+                className={`h-auto ${dense ? 'pb-0' : 'pb-24'} text-zinc-100 cursor-text flex flex-col items-start`}
             >
                 <EditorSelectionWrapper
                     editor={editor}
@@ -318,16 +424,29 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
                 </EditorSelectionWrapper>
             </div>
 
+            {contextMenuPos && (
+                <EditorContextMenu
+                    editor={editor}
+                    x={contextMenuPos.x}
+                    y={contextMenuPos.y}
+                    onClose={() => setContextMenuPos(null)}
+                    onOpenSettings={() => {
+                        setContextMenuPos(null);
+                        setEditingBlockIndex(null);
+                        setIsSettingsOpen(true);
+                    }}
+                />
+            )}
+
             {isSettingsOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
                     <div className="bg-[#1e1e1e] rounded-xl shadow-2xl w-full max-w-2xl h-[85vh] flex flex-col overflow-hidden border border-white/10">
                         <StyleSettingsPanel
                             styleConfig={getSettingsPanelConfig()}
                             onUpdateConfig={(newConfig) => {
-                                // If we are in instance mode, we might want to update the preview in real-time?
-                                // The panel handles its own local state, so it's fine.
-                                // But if we want to update the editor live as we drag sliders (optional but nice), we would do it here.
-                                // For now, let's stick to onConfirm for applying changes.
+                                // Only update local state for preview/interaction
+                                // Actual save happens on confirm or debounce if we implemented it
+                                setStyleConfig(newConfig);
                             }}
                             activeTab={activeTab}
                             onTabChange={setActiveTab}
@@ -350,7 +469,9 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
                                                 tr.setNodeMarkup(editingBlockIndex, undefined, {
                                                     ...node.attrs,
                                                     collapsible: config.code.collapsible,
-                                                    showBackground: config.code.showBackground
+                                                    showBackground: config.code.showBackground,
+                                                    showLineNumbers: config.code.showLineNumbers,
+                                                    wrapText: config.code.wrapText
                                                 });
                                             }
                                             return true;

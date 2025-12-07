@@ -3,6 +3,7 @@ import { DataItem, ContentBlock } from '../types';
 import { Button } from './Button';
 import { TipTapEditor } from './TipTapEditor';
 import { BlockEditorModal } from './BlockEditorModal';
+import { IconPicker } from './IconPicker';
 import { ArrowLeft, Download, ExternalLink, Trash2, Edit2, Plus, Save, X, Check } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Editor } from '@tiptap/react';
@@ -64,6 +65,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
 
   const handleSaveChanges = () => {
     onUpdate({
+      icon: editedItem.icon,
       title: editedItem.title,
       summary: editedItem.summary,
       content: editedItem.content || '',
@@ -176,25 +178,36 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
         <div className="bg-surface rounded-2xl p-6 border border-white/5 shadow-xl space-y-6" style={{ display: showEditTab ? 'block' : 'none' }}>
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-2">Título</label>
-            <input
-              type="text"
-              value={editedItem.title}
-              onChange={(e) => setEditedItem(prev => ({ ...prev, title: e.target.value }))}
-              className="w-full bg-background border border-white/10 rounded-lg p-3 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
-              placeholder="Título de la entrada"
-            />
+            <div className="flex gap-4 items-start">
+              <IconPicker
+                selectedIcon={editedItem.icon}
+                onSelect={(icon) => setEditedItem(prev => ({ ...prev, icon }))}
+              />
+              <div className="flex-grow bg-background border border-white/10 rounded-lg overflow-hidden focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-colors">
+                <TipTapEditor
+                  content={editedItem.title}
+                  onUpdate={(content) => setEditedItem(prev => ({ ...prev, title: content }))}
+                  isEditable={true}
+                  showToolbarOnFocus={true}
+                  className="px-3 py-2 min-h-[46px]"
+                  dense={true}
+                />
+              </div>
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-2">Resumen</label>
-            <textarea
-              ref={summaryTextareaRef}
-              rows={1}
-              value={editedItem.summary}
-              onChange={(e) => setEditedItem(prev => ({ ...prev, summary: e.target.value }))}
-              className="w-full bg-background border border-white/10 rounded-lg p-3 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors resize-none overflow-hidden min-h-[100px]"
-              placeholder="Breve descripción..."
-            />
+            <div className="bg-background border border-white/10 rounded-lg overflow-hidden focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-colors">
+              <TipTapEditor
+                content={editedItem.summary}
+                onUpdate={(content) => setEditedItem(prev => ({ ...prev, summary: content }))}
+                isEditable={true}
+                showToolbarOnFocus={true}
+                className="px-3 py-2 min-h-[40px]"
+                dense={true}
+              />
+            </div>
           </div>
 
           <div>
@@ -287,7 +300,10 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
                       isEditable={editingBlockId === block.id}
                       editorRef={editingBlockId === block.id ? activeEditorRef : undefined}
                       autoFocus={editingBlockId === block.id}
+                      showToolbarOnFocus={true}
                       onBlockDoubleClick={(type, idx) => handleBlockDoubleClick(type, idx, block.id)}
+                      dense={true}
+                      className="min-h-[40px]"
                     />
                   </div>
                 </div>
@@ -304,8 +320,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
               {editedItem.visitUrl && (
                 <a href={editedItem.visitUrl} target="_blank" rel="noopener noreferrer" className="pointer-events-none opacity-70">
                   <Button
-                    variant="secondary"
-                    className="!py-1.5 !px-3 text-xs !bg-transparent !border !border-[#bb86fc] !text-[#bb86fc] hover:!bg-transparent h-8 shadow-none"
+                    variant="outline"
+                    className="!py-1.5 !px-3 text-xs h-8"
                   >
                     <ExternalLink size={14} /> <span className="hidden sm:inline">Visitar</span>
                   </Button>
@@ -315,8 +331,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
               {editedItem.downloadUrl && (
                 <a href={editedItem.downloadUrl} target="_blank" rel="noopener noreferrer" className="pointer-events-none opacity-70">
                   <Button
-                    variant="secondary"
-                    className="!py-1.5 !px-3 text-xs !bg-transparent !border !border-[#bb86fc] !text-[#bb86fc] hover:!bg-transparent h-8 shadow-none"
+                    variant="outline"
+                    className="!py-1.5 !px-3 text-xs h-8"
                   >
                     <Download size={14} /> <span className="hidden sm:inline">Descargar</span>
                   </Button>
@@ -324,9 +340,18 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
               )}
             </div>
 
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-3 pr-32">{editedItem.title || 'Título'}</h1>
+            <h1
+              className="text-2xl md:text-3xl font-bold text-white mb-3 pr-32 [&>p]:inline [&>p]:m-0"
+              dangerouslySetInnerHTML={{ __html: editedItem.title || 'Título' }}
+            />
 
-            <p className="text-gray-300 text-base leading-relaxed whitespace-pre-wrap max-w-4xl mb-4">{editedItem.summary || 'Resumen'}</p>
+            <TipTapEditor
+              content={editedItem.summary || '<p>Resumen</p>'}
+              onUpdate={() => { }}
+              isEditable={false}
+              className="text-gray-300 text-base leading-relaxed max-w-4xl mb-4 [&>p]:m-0 min-h-0"
+              dense={true}
+            />
 
             {editedItem.tags.length > 0 && (
               <div className="flex flex-wrap items-center gap-2 pt-4 border-t border-white/5">
@@ -347,6 +372,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
                     content={block.content}
                     onUpdate={() => { }}
                     isEditable={false}
+                    dense={true}
+                    className="min-h-[40px]"
                   />
                 </div>
               ))}
@@ -390,8 +417,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
           {item.visitUrl && (
             <a href={item.visitUrl} target="_blank" rel="noopener noreferrer">
               <Button
-                variant="secondary"
-                className="!py-1.5 !px-3 text-xs !bg-transparent !border !border-[#bb86fc] !text-[#bb86fc] hover:!bg-transparent h-8 shadow-none"
+                variant="outline"
+                className="!py-1.5 !px-3 text-xs h-8"
               >
                 <ExternalLink size={14} /> <span className="hidden sm:inline">Visitar</span>
               </Button>
@@ -401,8 +428,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
           {item.downloadUrl && (
             <a href={item.downloadUrl} target="_blank" rel="noopener noreferrer">
               <Button
-                variant="secondary"
-                className="!py-1.5 !px-3 text-xs !bg-transparent !border !border-[#bb86fc] !text-[#bb86fc] hover:!bg-transparent h-8 shadow-none"
+                variant="outline"
+                className="!py-1.5 !px-3 text-xs h-8"
               >
                 <Download size={14} /> <span className="hidden sm:inline">Descargar</span>
               </Button>
@@ -410,9 +437,9 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
           )}
 
           <Button
-            variant="secondary"
+            variant="outline"
             onClick={() => setIsEditMode(true)}
-            className="!py-1.5 !px-3 text-xs !bg-transparent !border !border-[#bb86fc] !text-[#bb86fc] hover:!bg-transparent h-8 shadow-none"
+            className="!py-1.5 !px-3 text-xs h-8"
           >
             <Edit2 size={14} /> <span className="hidden sm:inline">Editar</span>
           </Button>
@@ -432,9 +459,18 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
           </Button>
         </div>
 
-        <h1 className="text-2xl md:text-3xl font-bold text-white mb-3 pr-32">{item.title}</h1>
+        <h1
+          className="text-2xl md:text-3xl font-bold text-white mb-3 pr-32 [&>p]:inline [&>p]:m-0"
+          dangerouslySetInnerHTML={{ __html: item.title || 'Título' }}
+        />
 
-        <p className="text-gray-300 text-base leading-relaxed whitespace-pre-wrap max-w-4xl mb-4">{item.summary}</p>
+        <TipTapEditor
+          content={item.summary || '<p>Resumen</p>'}
+          onUpdate={() => { }}
+          isEditable={false}
+          className="text-gray-300 text-base leading-relaxed max-w-4xl mb-4 [&>p]:m-0 min-h-0"
+          dense={true}
+        />
 
         {item.tags.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 pt-4 border-t border-white/5">
@@ -455,6 +491,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
                 content={block.content}
                 onUpdate={() => { }}
                 isEditable={false}
+                dense={true}
+                className="min-h-[40px]"
               />
             </div>
           ))}

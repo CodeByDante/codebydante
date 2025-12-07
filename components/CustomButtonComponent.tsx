@@ -6,12 +6,10 @@ import { subscribeToStyleConfig, StyleConfig, DEFAULT_STYLE_CONFIG } from '../se
 
 export const CustomButtonComponent: React.FC<NodeViewProps> = ({ node, getPos, editor }) => {
     const { text, url, variant, backgroundColor, textColor, borderRadius, width, height } = node.attrs;
-    const [styleConfig, setStyleConfig] = useState<StyleConfig>(DEFAULT_STYLE_CONFIG);
-
-    useEffect(() => {
-        const unsubscribe = subscribeToStyleConfig(setStyleConfig);
-        return () => unsubscribe();
-    }, []);
+    // We no longer subscribe to live styleConfig updates to ensure existing buttons don't change
+    // when the user adjusts the settings panel. Settings only affect NEW buttons.
+    // Falls back to defaults if attributes are missing (legacy buttons).
+    const fallbackConfig = DEFAULT_STYLE_CONFIG;
 
     const handleClick = (e: React.MouseEvent) => {
         if (editor.isEditable) {
@@ -20,13 +18,13 @@ export const CustomButtonComponent: React.FC<NodeViewProps> = ({ node, getPos, e
         // In read-only mode, the <a> tag handles navigation naturally
     };
 
-    // Use node attributes if available (frozen style), otherwise fallback to global config (legacy/dynamic)
+    // Use node attributes if available (frozen style), otherwise fallback to DEFAULT config (not live config)
     const activeStyle = {
-        width: width || (styleConfig.button.width === 'auto' ? 'auto' : styleConfig.button.width),
-        height: height || (styleConfig.button.height === 'auto' ? 'auto' : styleConfig.button.height),
-        backgroundColor: backgroundColor || styleConfig.button.backgroundColor,
-        textColor: textColor || styleConfig.button.textColor,
-        borderRadius: borderRadius || styleConfig.button.borderRadius,
+        width: width || (fallbackConfig.button.width === 'auto' ? 'auto' : fallbackConfig.button.width),
+        height: height || (fallbackConfig.button.height === 'auto' ? 'auto' : fallbackConfig.button.height),
+        backgroundColor: backgroundColor || fallbackConfig.button.backgroundColor,
+        textColor: textColor || fallbackConfig.button.textColor,
+        borderRadius: borderRadius || fallbackConfig.button.borderRadius,
     };
 
     const buttonStyle = {

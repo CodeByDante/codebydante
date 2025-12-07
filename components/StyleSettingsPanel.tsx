@@ -6,8 +6,8 @@ import { CustomBlockquote } from './CustomBlockquote';
 interface StyleSettingsPanelProps {
     styleConfig: StyleConfig;
     onUpdateConfig: (newConfig: StyleConfig) => void;
-    activeTab: 'code' | 'quote' | 'link' | 'general' | 'button';
-    onTabChange: (tab: 'code' | 'quote' | 'link' | 'general' | 'button') => void;
+    activeTab: 'code' | 'quote' | 'link' | 'general' | 'button' | 'codeblock';
+    onTabChange: (tab: 'code' | 'quote' | 'link' | 'general' | 'button' | 'codeblock') => void;
 
     onClose: () => void;
     onConfirm?: (config: StyleConfig) => void;
@@ -118,10 +118,19 @@ export const StyleSettingsPanel: React.FC<StyleSettingsPanelProps> = ({
             </div>
 
             {!hideTabs && (
-                <div className="flex border-b border-white/5">
+                <div className="flex border-b border-white/5 overflow-x-auto custom-scrollbar">
+                    <button
+                        onClick={() => onTabChange('general')}
+                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'general'
+                            ? 'bg-primary/10 text-primary border-b-2 border-primary'
+                            : 'text-gray-400 hover:text-white hover:bg-white/5'
+                            }`}
+                    >
+                        General
+                    </button>
                     <button
                         onClick={() => onTabChange('code')}
-                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${activeTab === 'code'
+                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'code'
                             ? 'bg-primary/10 text-primary border-b-2 border-primary'
                             : 'text-gray-400 hover:text-white hover:bg-white/5'
                             }`}
@@ -129,8 +138,17 @@ export const StyleSettingsPanel: React.FC<StyleSettingsPanelProps> = ({
                         Código
                     </button>
                     <button
+                        onClick={() => onTabChange('codeblock')}
+                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'codeblock'
+                            ? 'bg-primary/10 text-primary border-b-2 border-primary'
+                            : 'text-gray-400 hover:text-white hover:bg-white/5'
+                            }`}
+                    >
+                        Bloque de Código
+                    </button>
+                    <button
                         onClick={() => onTabChange('quote')}
-                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${activeTab === 'quote'
+                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'quote'
                             ? 'bg-primary/10 text-primary border-b-2 border-primary'
                             : 'text-gray-400 hover:text-white hover:bg-white/5'
                             }`}
@@ -139,7 +157,7 @@ export const StyleSettingsPanel: React.FC<StyleSettingsPanelProps> = ({
                     </button>
                     <button
                         onClick={() => onTabChange('link')}
-                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${activeTab === 'link'
+                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'link'
                             ? 'bg-primary/10 text-primary border-b-2 border-primary'
                             : 'text-gray-400 hover:text-white hover:bg-white/5'
                             }`}
@@ -148,7 +166,7 @@ export const StyleSettingsPanel: React.FC<StyleSettingsPanelProps> = ({
                     </button>
                     <button
                         onClick={() => onTabChange('button')}
-                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${activeTab === 'button'
+                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'button'
                             ? 'bg-primary/10 text-primary border-b-2 border-primary'
                             : 'text-gray-400 hover:text-white hover:bg-white/5'
                             }`}
@@ -160,6 +178,61 @@ export const StyleSettingsPanel: React.FC<StyleSettingsPanelProps> = ({
 
             <div className="overflow-y-auto flex-1 p-5 space-y-5 custom-scrollbar pb-10">
 
+
+                {activeTab === 'general' && (
+                    <div className="space-y-6">
+                        <div className="bg-white/5 rounded-lg p-4 border border-white/5">
+                            <h4 className="text-sm font-medium text-white mb-2">Modo de Interacción</h4>
+                            <p className="text-xs text-gray-400 mb-4">
+                                Elige cómo quieres acceder a las herramientas de edición.
+                            </p>
+
+                            <div className="flex flex-col gap-3">
+                                <label className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${localConfig.general?.interactionMode === 'floating'
+                                        ? 'bg-primary/10 border-primary'
+                                        : 'bg-black/20 border-white/5 hover:bg-white/5'
+                                    }`}>
+                                    <div className="flex flex-col">
+                                        <span className={`text-sm font-medium ${localConfig.general?.interactionMode === 'floating' ? 'text-white' : 'text-gray-300'}`}>Barra Flotante</span>
+                                        <span className="text-[10px] text-gray-500">La barra de herramientas aparece flotando en la parte inferior.</span>
+                                    </div>
+                                    <input
+                                        type="radio"
+                                        name="interactionMode"
+                                        value="floating"
+                                        checked={localConfig.general?.interactionMode === 'floating'}
+                                        onChange={() => setLocalConfig({
+                                            ...localConfig,
+                                            general: { ...localConfig.general, interactionMode: 'floating' }
+                                        })}
+                                        className="w-4 h-4 accent-primary"
+                                    />
+                                </label>
+
+                                <label className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${localConfig.general?.interactionMode === 'context-menu'
+                                        ? 'bg-primary/10 border-primary'
+                                        : 'bg-black/20 border-white/5 hover:bg-white/5'
+                                    }`}>
+                                    <div className="flex flex-col">
+                                        <span className={`text-sm font-medium ${localConfig.general?.interactionMode === 'context-menu' ? 'text-white' : 'text-gray-300'}`}>Menú Contextual (Clic Derecho)</span>
+                                        <span className="text-[10px] text-gray-500">Accede a las herramientas haciendo clic derecho en el editor.</span>
+                                    </div>
+                                    <input
+                                        type="radio"
+                                        name="interactionMode"
+                                        value="context-menu"
+                                        checked={localConfig.general?.interactionMode === 'context-menu'}
+                                        onChange={() => setLocalConfig({
+                                            ...localConfig,
+                                            general: { ...localConfig.general, interactionMode: 'context-menu' }
+                                        })}
+                                        className="w-4 h-4 accent-primary"
+                                    />
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {activeTab === 'code' && (
                     <>
@@ -212,6 +285,15 @@ export const StyleSettingsPanel: React.FC<StyleSettingsPanelProps> = ({
                                     <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${localConfig.code.showBackground ? 'translate-x-6' : 'translate-x-0'}`} />
                                 </button>
                             </div>
+                        </div>
+                        <div className="text-gray-500 text-xs italic mt-4">Configuración para código inline.</div>
+                    </>
+                )}
+
+                {activeTab === 'codeblock' && (
+                    <>
+                        <div className="space-y-4 mt-4">
+                            <h4 className="text-sm font-medium text-white mb-2">Comportamiento de Bloques de Código</h4>
                             <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
                                 <div className="flex flex-col">
                                     <span className="text-sm text-gray-300 font-medium">Colapsar texto largo</span>
@@ -227,13 +309,41 @@ export const StyleSettingsPanel: React.FC<StyleSettingsPanelProps> = ({
                                     <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${localConfig.code.collapsible ? 'translate-x-6' : 'translate-x-0'}`} />
                                 </button>
                             </div>
+
+
+                            <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
+                                <div className="flex flex-col">
+                                    <span className="text-sm text-gray-300 font-medium">Números de línea</span>
+                                    <span className="text-[10px] text-gray-500">Mostrar números de línea en el margen izquierdo</span>
+                                </div>
+                                <button
+                                    onClick={() => setLocalConfig({
+                                        ...localConfig,
+                                        code: { ...localConfig.code, showLineNumbers: !localConfig.code.showLineNumbers }
+                                    })}
+                                    className={`w-12 h-6 rounded-full transition-colors relative ${localConfig.code.showLineNumbers ? 'bg-primary' : 'bg-white/10'}`}
+                                >
+                                    <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${localConfig.code.showLineNumbers ? 'translate-x-6' : 'translate-x-0'}`} />
+                                </button>
+                            </div>
+
+                            <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
+                                <div className="flex flex-col">
+                                    <span className="text-sm text-gray-300 font-medium">Ajuste de línea</span>
+                                    <span className="text-[10px] text-gray-500">Ver todo el código sin scroll horizontal</span>
+                                </div>
+                                <button
+                                    onClick={() => setLocalConfig({
+                                        ...localConfig,
+                                        code: { ...localConfig.code, wrapText: !localConfig.code.wrapText }
+                                    })}
+                                    className={`w-12 h-6 rounded-full transition-colors relative ${localConfig.code.wrapText ? 'bg-primary' : 'bg-white/10'}`}
+                                >
+                                    <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${localConfig.code.wrapText ? 'translate-x-6' : 'translate-x-0'}`} />
+                                </button>
+                            </div>
                         </div>
-
-
-
-
-                        {/* Simplified Code Tab Controls for now to fit in context, assuming user focused on Quote */}
-                        <div className="text-gray-500 text-xs italic mt-4">Controles de código simplificados para esta vista.</div>
+                        <div className="text-gray-500 text-xs italic mt-4">Configuración para bloques de código largos.</div>
                     </>
                 )}
 
@@ -556,6 +666,7 @@ export const StyleSettingsPanel: React.FC<StyleSettingsPanelProps> = ({
                                 <button
                                     style={{
                                         width: localConfig.button?.width === 'auto' ? 'auto' : localConfig.button?.width,
+                                        maxWidth: '100%', // Prevent overflow
                                         height: localConfig.button?.height === 'auto' ? 'auto' : localConfig.button?.height,
                                         backgroundColor: 'transparent',
                                         color: localConfig.button?.backgroundColor,

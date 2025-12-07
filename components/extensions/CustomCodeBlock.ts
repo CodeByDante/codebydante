@@ -22,6 +22,24 @@ export const CustomCodeBlock = CodeBlock.extend({
                         'data-collapsible': attributes.collapsible,
                     };
                 },
+            },
+            showLineNumbers: {
+                default: false,
+                parseHTML: (element) => element.getAttribute('data-show-line-numbers') === 'true',
+                renderHTML: (attributes) => {
+                    return {
+                        'data-show-line-numbers': attributes.showLineNumbers,
+                    };
+                },
+            },
+            wrapText: {
+                default: false,
+                parseHTML: (element) => element.getAttribute('data-wrap-text') === 'true',
+                renderHTML: (attributes) => {
+                    return {
+                        'data-wrap-text': attributes.wrapText,
+                    };
+                },
             }
         };
     },

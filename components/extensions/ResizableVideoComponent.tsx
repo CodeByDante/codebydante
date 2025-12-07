@@ -87,10 +87,20 @@ export const ResizableVideoComponent = (props: any) => {
     const getEmbedConfig = (url: string) => {
         // 1. Dropbox (Tratamiento especial: video nativo)
         if (url.includes('dropbox.com')) {
-            return {
-                type: 'video',
-                src: url.replace('dl=0', 'raw=1').replace('?dl=0', '') + '?raw=1'
-            };
+            try {
+                const urlObj = new URL(url);
+                urlObj.searchParams.set('raw', '1');
+                urlObj.searchParams.delete('dl');
+                return {
+                    type: 'video',
+                    src: urlObj.toString()
+                };
+            } catch (e) {
+                return {
+                    type: 'video',
+                    src: url
+                };
+            }
         }
 
         // 2. Archivos directos (Video nativo)
@@ -139,7 +149,7 @@ export const ResizableVideoComponent = (props: any) => {
         <NodeViewWrapper style={containerStyle} className="resizable-video-wrapper group">
             <div
                 ref={containerRef}
-                className={`relative inline-block transition-all ${selected ? 'ring-2 ring-primary rounded-lg' : ''}`}
+                className={`relative inline-block transition-all ${selected && editor.isEditable ? 'ring-2 ring-primary rounded-lg' : ''}`}
                 style={{
                     width: width,
                     maxWidth: '100%',

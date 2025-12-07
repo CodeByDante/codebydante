@@ -6,6 +6,7 @@ export interface ContentBlock {
 
 export interface DataItem {
   id: string;
+  icon?: string;
   title: string;
   summary: string;
   content: string; // Kept for backward compatibility and search
