@@ -11,9 +11,9 @@ import { subscribeToStyleConfig } from './services/codeStyleService';
 const App: React.FC = () => {
   const [items, setItems] = useState<DataItem[]>([]);
   const [view, setView] = useState<ViewState>('LIST');
-  const [viewMode, setViewMode] = useState<'normal' | 'code'>(() => {
+  const [viewMode, setViewMode] = useState<'normal' | 'admin'>(() => {
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem('viewMode') as 'normal' | 'code') || 'normal';
+      return (localStorage.getItem('viewMode') as 'normal' | 'admin') || 'normal';
     }
     return 'normal';
   });
@@ -272,29 +272,16 @@ const App: React.FC = () => {
                       <div className="p-1">
                         <button
                           onClick={() => {
-                            setViewMode('normal');
+                            setViewMode(prev => prev === 'admin' ? 'normal' : 'admin');
                             setIsSettingsOpen(false);
                           }}
-                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${viewMode === 'normal'
+                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${viewMode === 'admin'
                             ? 'bg-primary/10 text-primary'
                             : 'text-gray-400 hover:bg-white/5 hover:text-white'
                             }`}
                         >
-                          <Type size={16} />
-                          Modo Normal
-                        </button>
-                        <button
-                          onClick={() => {
-                            setViewMode('code');
-                            setIsSettingsOpen(false);
-                          }}
-                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${viewMode === 'code'
-                            ? 'bg-primary/10 text-primary'
-                            : 'text-gray-400 hover:bg-white/5 hover:text-white'
-                            }`}
-                        >
-                          <Code size={16} />
-                          Modo Código
+                          <Settings size={16} />
+                          {viewMode === 'admin' ? 'Desactivar Admin' : 'Modo Admin'}
                         </button>
                       </div>
                     </div>
@@ -302,9 +289,11 @@ const App: React.FC = () => {
                 )}
               </div>
 
-              <Button onClick={() => { setSelectedItem(null); setView('CREATE'); }}>
-                <Plus size={20} /> <span className="hidden sm:inline">Nueva Entrada</span>
-              </Button>
+              {viewMode === 'admin' && (
+                <Button onClick={() => { setSelectedItem(null); setView('CREATE'); }}>
+                  <Plus size={20} /> <span className="hidden sm:inline">Nueva Entrada</span>
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -354,7 +343,6 @@ const App: React.FC = () => {
                       <Card
                         key={item.id}
                         item={item}
-                        viewMode={viewMode}
                         onClick={(i) => { setSelectedItem(i); setView('DETAIL'); }}
                       />
                     ))}
@@ -387,6 +375,7 @@ const App: React.FC = () => {
                 onBack={() => setView('LIST')}
                 onUpdate={handleUpdate}
                 onDelete={handleDelete}
+                isEditable={viewMode === 'admin'}
               />
             )}
           </>

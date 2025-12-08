@@ -13,9 +13,10 @@ interface DetailViewProps {
   onBack: () => void;
   onUpdate: (data: Omit<DataItem, 'id' | 'createdAt'>) => void;
   onDelete: (id: string) => void;
+  isEditable?: boolean;
 }
 
-export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, onDelete }) => {
+export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, onDelete, isEditable = false }) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editedItem, setEditedItem] = useState<DataItem>(item);
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
@@ -478,27 +479,31 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
             </a>
           )}
 
-          <Button
-            variant="outline"
-            onClick={() => setIsEditMode(true)}
-            className="!py-1.5 !px-3 text-xs h-8"
-          >
-            <Edit2 size={14} /> <span className="hidden sm:inline">Editar</span>
-          </Button>
-          <Button
-            variant="danger"
-            onClick={() => {
-              setConfirmDialog({
-                isOpen: true,
-                title: 'Eliminar Entrada',
-                message: '¿Estás seguro de que deseas eliminar esta entrada permanentemente? Esta acción no se puede deshacer.',
-                onConfirm: () => onDelete(item.id)
-              });
-            }}
-            className="!py-1.5 !px-3 h-8"
-          >
-            <Trash2 size={14} />
-          </Button>
+          {isEditable && (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => setIsEditMode(true)}
+                className="!py-1.5 !px-3 text-xs h-8"
+              >
+                <Edit2 size={14} /> <span className="hidden sm:inline">Editar</span>
+              </Button>
+              <Button
+                variant="danger"
+                onClick={() => {
+                  setConfirmDialog({
+                    isOpen: true,
+                    title: 'Eliminar Entrada',
+                    message: '¿Estás seguro de que deseas eliminar esta entrada permanentemente? Esta acción no se puede deshacer.',
+                    onConfirm: () => onDelete(item.id)
+                  });
+                }}
+                className="!py-1.5 !px-3 h-8"
+              >
+                <Trash2 size={14} />
+              </Button>
+            </>
+          )}
         </div>
 
         <h1

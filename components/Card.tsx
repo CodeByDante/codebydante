@@ -6,10 +6,9 @@ import { getIconComponent } from './IconPicker';
 interface CardProps {
   item: DataItem;
   onClick: (item: DataItem) => void;
-  viewMode: 'normal' | 'code';
 }
 
-export const Card: React.FC<CardProps> = ({ item, onClick, viewMode }) => {
+export const Card: React.FC<CardProps> = ({ item, onClick }) => {
   console.log('[Card] Rendering item:', item.title, 'Icon:', item.icon);
   const Icon = getIconComponent(item.icon);
   return (
@@ -25,12 +24,12 @@ export const Card: React.FC<CardProps> = ({ item, onClick, viewMode }) => {
             </div>
           )}
           <h3
-            className={`text-base sm:text-lg font-bold text-white mb-2 group-hover:text-primary transition-colors line-clamp-2 ${viewMode === 'code' ? 'font-mono' : ''} [&>p]:m-0 [&>p]:inline`}
+            className="text-base sm:text-lg font-bold text-white mb-2 group-hover:text-primary transition-colors line-clamp-2 [&>p]:m-0 [&>p]:inline"
             dangerouslySetInnerHTML={{ __html: item.title }}
           />
         </div>
         <div
-          className={`text-zinc-400 text-[11px] sm:text-xs leading-normal ${viewMode === 'code' ? 'font-mono' : ''} [&>p]:m-0 [&_img]:w-full [&_img]:h-full [&_img]:object-cover [&_img]:p-0 [&_img]:m-0 [&_img]:rounded-none [&_figure]:p-0 [&_figure]:m-0 [&_figure]:bg-transparent overflow-hidden`}
+          className="text-zinc-400 text-[11px] sm:text-xs leading-normal [&>p]:m-0 [&_img]:w-full [&_img]:h-full [&_img]:object-cover [&_img]:p-0 [&_img]:m-0 [&_img]:rounded-none [&_figure]:p-0 [&_figure]:m-0 [&_figure]:bg-transparent overflow-hidden"
           dangerouslySetInnerHTML={{ __html: item.summary }}
           style={{
             display: '-webkit-box',
