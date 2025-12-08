@@ -224,31 +224,31 @@ const App: React.FC = () => {
                   const nextOrder = orders[(currentIndex + 1) % orders.length];
                   setSortOrder(nextOrder);
                 }}
-                className="bg-surface border border-white/5 hover:bg-surfaceHover transition-all hover:scale-105 active:scale-95 flex items-center gap-2 px-3 min-w-[140px] justify-center"
+                className="bg-surface border border-white/5 hover:bg-surfaceHover transition-all hover:scale-105 active:scale-95 flex items-center gap-2 px-3 min-w-0 sm:min-w-[140px] justify-center"
                 title={`Ordenar por: ${sortOrder === 'updated' ? 'Modificación' : sortOrder === 'created' ? 'Fecha' : sortOrder === 'name' ? 'Nombre' : 'Aleatorio'}`}
               >
                 {sortOrder === 'updated' && (
                   <>
                     <Clock size={16} className="text-primary" />
-                    <span className="text-sm font-medium">Recientes</span>
+                    <span className="text-sm font-medium hidden sm:inline">Recientes</span>
                   </>
                 )}
                 {sortOrder === 'created' && (
                   <>
                     <Calendar size={16} className="text-primary" />
-                    <span className="text-sm font-medium">Fecha</span>
+                    <span className="text-sm font-medium hidden sm:inline">Fecha</span>
                   </>
                 )}
                 {sortOrder === 'name' && (
                   <>
                     <Type size={16} className="text-primary" />
-                    <span className="text-sm font-medium">Nombre</span>
+                    <span className="text-sm font-medium hidden sm:inline">Nombre</span>
                   </>
                 )}
                 {sortOrder === 'random' && (
                   <>
                     <Shuffle size={16} className="text-primary" />
-                    <span className="text-sm font-medium">Aleatorio</span>
+                    <span className="text-sm font-medium hidden sm:inline">Aleatorio</span>
                   </>
                 )}
               </Button>

@@ -352,7 +352,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
 
     return (
         <>
-            <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full bg-zinc-900/90 backdrop-blur-md border border-white/10 shadow-2xl px-4 py-2 transition-all duration-300 ease-in-out">
+            <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full bg-zinc-900/90 backdrop-blur-md border border-white/10 shadow-2xl px-4 py-2 transition-all duration-300 ease-in-out max-w-[95vw] overflow-x-auto">
 
                 <div
                     className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-in-out ${minimalMode ? 'w-0 opacity-0 pointer-events-none' : 'w-auto opacity-100'

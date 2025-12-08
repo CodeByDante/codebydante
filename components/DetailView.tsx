@@ -454,8 +454,8 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
         <ArrowLeft size={18} /> Volver al Inicio
       </button>
 
-      <div className={`${getCardClasses(item.cardStyle)} h-fit rounded-xl p-6 relative mb-8`}>
-        <div className="absolute top-5 right-5 flex gap-2 z-20">
+      <div className={`${getCardClasses(item.cardStyle)} h-fit rounded-xl p-6 relative mb-8 flex flex-col md:block`}>
+        <div className="flex justify-end gap-2 mb-4 md:absolute md:top-5 md:right-5 md:mb-0 z-20">
           {item.visitUrl && (
             <a href={item.visitUrl} target="_blank" rel="noopener noreferrer">
               <Button
@@ -502,7 +502,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
         </div>
 
         <h1
-          className="text-2xl md:text-3xl font-bold text-white mb-3 pr-32 [&>p]:inline [&>p]:m-0"
+          className="text-2xl md:text-3xl font-bold text-white mb-3 md:pr-32 [&>p]:inline [&>p]:m-0"
           dangerouslySetInnerHTML={{ __html: item.title || 'Título' }}
         />
 
