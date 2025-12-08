@@ -1,15 +1,15 @@
 import { initializeApp } from 'firebase/app';
-import { 
-  getFirestore, 
-  collection, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  doc, 
-  onSnapshot, 
-  query, 
-  orderBy, 
-  serverTimestamp 
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  query,
+  orderBy,
+  serverTimestamp
 } from 'firebase/firestore';
 import { DataItem } from '../types';
 
@@ -44,7 +44,7 @@ const cleanData = (data: any) => {
 
 export const subscribeToItems = (callback: (items: DataItem[]) => void) => {
   const q = query(collection(db, COLLECTION_NAME), orderBy('createdAt', 'desc'));
-  
+
   return onSnapshot(q, (snapshot) => {
     const items = snapshot.docs.map(doc => {
       const data = doc.data();
@@ -64,6 +64,7 @@ export const subscribeToItems = (callback: (items: DataItem[]) => void) => {
         blocks,
         // Convert Firestore Timestamp to number (milliseconds) if necessary
         createdAt: data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now(),
+        updatedAt: data.updatedAt?.toMillis ? data.updatedAt.toMillis() : (data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now()),
       } as DataItem;
     });
     callback(items);
@@ -91,12 +92,15 @@ export const updateItem = async (id: string, item: Partial<DataItem>) => {
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
     // Remove id and createdAt from the update payload to prevent overwriting logic
-    const { id: _, createdAt: __, ...updateData } = item; 
-    
+    const { id: _, createdAt: __, ...updateData } = item;
+
     // Sanitize the data
     const sanitizedUpdateData = cleanData(updateData);
 
-    await updateDoc(docRef, sanitizedUpdateData);
+    await updateDoc(docRef, {
+      ...sanitizedUpdateData,
+      updatedAt: serverTimestamp()
+    });
   } catch (e) {
     console.error("Error updating document: ", e);
     throw e;

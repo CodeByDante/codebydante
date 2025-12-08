@@ -15,6 +15,7 @@ export interface DataItem {
   downloadUrl?: string;
   visitUrl?: string;
   createdAt: number;
+  updatedAt?: number; // Added for modification date sorting
   tags: string[];
 }
 

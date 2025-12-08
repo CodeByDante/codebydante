@@ -4,7 +4,7 @@ import { Card } from './components/Card';
 import { DataForm } from './components/DataForm';
 import { DetailView } from './components/DetailView';
 import { Button } from './components/Button';
-import { Plus, Search, Layers, Loader2, WifiOff, Settings, Code, Type } from 'lucide-react';
+import { Plus, Search, Layers, Loader2, WifiOff, Settings, Code, Type, Clock, Calendar, Shuffle } from 'lucide-react';
 import { subscribeToItems, addItem, updateItem, deleteItem } from './services/firebase';
 import { subscribeToStyleConfig } from './services/codeStyleService';
 
@@ -22,6 +22,19 @@ const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<'updated' | 'created' | 'name' | 'random'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sortOrder');
+      if (saved && ['updated', 'created', 'name', 'random'].includes(saved)) {
+        return saved as 'updated' | 'created' | 'name' | 'random';
+      }
+    }
+    return 'random';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('sortOrder', sortOrder);
+  }, [sortOrder]);
 
   // Helper function to apply code style dynamically to DOM
   const applyCodeStyleToDOM = (config: any) => {
@@ -107,12 +120,25 @@ const App: React.FC = () => {
 
   const filteredItems = useMemo(() => {
     const lowerQ = searchQuery.toLowerCase();
-    return items.filter(item =>
+    const result = items.filter(item =>
       item.title.toLowerCase().includes(lowerQ) ||
       item.tags.some(t => t.toLowerCase().includes(lowerQ)) ||
       item.summary.toLowerCase().includes(lowerQ)
     );
-  }, [items, searchQuery]);
+
+    if (sortOrder === 'random') {
+      // Simple random shuffle (not persistent across renders unless memoized, but valid for "random view")
+      // To prevent jitter, we could shuffle only when sortOrder changes, but simpler is:
+      return [...result].sort(() => Math.random() - 0.5);
+    } else if (sortOrder === 'name') {
+      return [...result].sort((a, b) => a.title.localeCompare(b.title));
+    } else if (sortOrder === 'updated') {
+      return [...result].sort((a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt));
+    } else {
+      // Default: created (newest first)
+      return [...result].sort((a, b) => b.createdAt - a.createdAt);
+    }
+  }, [items, searchQuery, sortOrder]);
 
   const handleCreate = async (data: Omit<DataItem, 'id' | 'createdAt'>) => {
     try {
@@ -190,6 +216,43 @@ const App: React.FC = () => {
             )}
 
             <div className="flex items-center gap-3">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  const orders: ('updated' | 'created' | 'name' | 'random')[] = ['updated', 'created', 'name', 'random'];
+                  const currentIndex = orders.indexOf(sortOrder);
+                  const nextOrder = orders[(currentIndex + 1) % orders.length];
+                  setSortOrder(nextOrder);
+                }}
+                className="bg-surface border border-white/5 hover:bg-surfaceHover transition-all hover:scale-105 active:scale-95 flex items-center gap-2 px-3 min-w-[140px] justify-center"
+                title={`Ordenar por: ${sortOrder === 'updated' ? 'Modificación' : sortOrder === 'created' ? 'Fecha' : sortOrder === 'name' ? 'Nombre' : 'Aleatorio'}`}
+              >
+                {sortOrder === 'updated' && (
+                  <>
+                    <Clock size={16} className="text-primary" />
+                    <span className="text-sm font-medium">Recientes</span>
+                  </>
+                )}
+                {sortOrder === 'created' && (
+                  <>
+                    <Calendar size={16} className="text-primary" />
+                    <span className="text-sm font-medium">Fecha</span>
+                  </>
+                )}
+                {sortOrder === 'name' && (
+                  <>
+                    <Type size={16} className="text-primary" />
+                    <span className="text-sm font-medium">Nombre</span>
+                  </>
+                )}
+                {sortOrder === 'random' && (
+                  <>
+                    <Shuffle size={16} className="text-primary" />
+                    <span className="text-sm font-medium">Aleatorio</span>
+                  </>
+                )}
+              </Button>
+
               <div className="relative">
                 <Button
                   variant="secondary"
@@ -284,7 +347,9 @@ const App: React.FC = () => {
                     <p className="text-gray-500 mt-2">El repositorio está vacío o no hay coincidencias.</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                  <div
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
+                  >
                     {filteredItems.map(item => (
                       <Card
                         key={item.id}
