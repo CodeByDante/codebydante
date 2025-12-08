@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { DataItem, ViewState } from './types';
+import { AdminLoginModal } from './components/AdminLoginModal';
 import { Card } from './components/Card';
 import { DataForm } from './components/DataForm';
 import { DetailView } from './components/DetailView';
@@ -17,6 +18,7 @@ const App: React.FC = () => {
     }
     return 'normal';
   });
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<DataItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -270,10 +272,16 @@ const App: React.FC = () => {
                     />
                     <div className="absolute right-0 mt-2 w-48 bg-surface border border-white/10 rounded-xl shadow-xl z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                       <div className="p-1">
+
                         <button
                           onClick={() => {
-                            setViewMode(prev => prev === 'admin' ? 'normal' : 'admin');
-                            setIsSettingsOpen(false);
+                            if (viewMode === 'admin') {
+                              setViewMode('normal');
+                              setIsSettingsOpen(false);
+                            } else {
+                              setShowAdminLogin(true);
+                              setIsSettingsOpen(false);
+                            }
                           }}
                           className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${viewMode === 'admin'
                             ? 'bg-primary/10 text-primary'
@@ -382,6 +390,14 @@ const App: React.FC = () => {
         )}
 
       </main>
+      <AdminLoginModal
+        isOpen={showAdminLogin}
+        onClose={() => setShowAdminLogin(false)}
+        onSuccess={() => {
+          setViewMode('admin');
+          setShowAdminLogin(false);
+        }}
+      />
     </div>
   );
 };
