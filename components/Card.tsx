@@ -30,7 +30,7 @@ export const Card: React.FC<CardProps> = ({ item, onClick, viewMode }) => {
           />
         </div>
         <div
-          className={`text-zinc-400 text-[11px] sm:text-xs leading-normal flex-grow ${viewMode === 'code' ? 'font-mono' : ''} [&>p]:m-0 [&_img]:w-full [&_img]:h-full [&_img]:object-cover [&_img]:p-0 [&_img]:m-0 [&_img]:rounded-none [&_figure]:p-0 [&_figure]:m-0 [&_figure]:bg-transparent overflow-hidden`}
+          className={`text-zinc-400 text-[11px] sm:text-xs leading-normal ${viewMode === 'code' ? 'font-mono' : ''} [&>p]:m-0 [&_img]:w-full [&_img]:h-full [&_img]:object-cover [&_img]:p-0 [&_img]:m-0 [&_img]:rounded-none [&_figure]:p-0 [&_figure]:m-0 [&_figure]:bg-transparent overflow-hidden`}
           dangerouslySetInnerHTML={{ __html: item.summary }}
           style={{
             display: '-webkit-box',

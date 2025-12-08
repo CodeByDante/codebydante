@@ -123,6 +123,7 @@ export const TipTapEditor: React.FC<TipTapEditorProps> = ({
                 code: false, // Disable default code to use custom configuration
                 codeBlock: false, // Disable default codeBlock to use custom configuration
                 horizontalRule: false, // Disable default horizontalRule to use custom configuration
+                blockquote: false, // Disable default blockquote to use custom configuration
             }),
             Heading.configure({
                 levels: [1, 2, 3],

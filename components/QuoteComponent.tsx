@@ -9,7 +9,7 @@ export const QuoteComponent: React.FC<NodeViewProps> = (props) => {
     const { node } = props;
     const { attrs } = node;
     const contentRef = useRef<HTMLDivElement>(null);
-    const [contentHeight, setContentHeight] = useState<string | number>('4.5em');
+    const [contentHeight, setContentHeight] = useState<number>(0);
 
     useEffect(() => {
         if (contentRef.current) {
@@ -121,7 +121,11 @@ export const QuoteComponent: React.FC<NodeViewProps> = (props) => {
                 ref={contentRef}
                 style={{
                     // Si está colapsado, forzamos una altura máxima (aprox 3 líneas)
-                    maxHeight: isCollapsed ? '4.5em' : `${contentHeight}px`,
+                    // Si NO es colapsable (feature disabled), usamos 'none' para que crezca automático
+                    // Si es colapsable pero expandido, usamos la altura calculada para animar
+                    maxHeight: isCollapsed
+                        ? '4.5em'
+                        : (attrs.collapsible ? `${contentHeight}px` : 'none'),
                     overflow: 'hidden',
                     position: 'relative',
                     transition: 'max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1)', // Smooth slide animation

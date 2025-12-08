@@ -176,7 +176,7 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
                 isCodeFont: defaultQuoteStyles.isCodeFont
             } : {};
 
-            editor.chain().focus().setBlockquote().updateAttributes('customBlockquote', attributes).run();
+            editor.chain().focus().wrapIn('customBlockquote', attributes).run();
         }
     };
 
