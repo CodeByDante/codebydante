@@ -121,25 +121,70 @@ const App: React.FC = () => {
   }, []);
 
   const filteredItems = useMemo(() => {
-    const lowerQ = searchQuery.toLowerCase();
-    const result = items.filter(item =>
-      item.title.toLowerCase().includes(lowerQ) ||
-      item.tags.some(t => t.toLowerCase().includes(lowerQ)) ||
-      item.summary.toLowerCase().includes(lowerQ)
-    );
-
-    if (sortOrder === 'random') {
-      // Simple random shuffle (not persistent across renders unless memoized, but valid for "random view")
-      // To prevent jitter, we could shuffle only when sortOrder changes, but simpler is:
-      return [...result].sort(() => Math.random() - 0.5);
-    } else if (sortOrder === 'name') {
-      return [...result].sort((a, b) => a.title.localeCompare(b.title));
-    } else if (sortOrder === 'updated') {
-      return [...result].sort((a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt));
-    } else {
-      // Default: created (newest first)
-      return [...result].sort((a, b) => b.createdAt - a.createdAt);
+    if (!searchQuery.trim()) {
+      const allItems = [...items];
+      // Default sorting when no search
+      if (sortOrder === 'random') return allItems.sort(() => Math.random() - 0.5);
+      if (sortOrder === 'name') return allItems.sort((a, b) => a.title.localeCompare(b.title));
+      if (sortOrder === 'updated') return allItems.sort((a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt));
+      return allItems.sort((a, b) => b.createdAt - a.createdAt);
     }
+
+    const lowerQ = searchQuery.toLowerCase();
+
+    // SMART SEARCH LOGIC
+    const stopWords = new Set([
+      'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas', 'y', 'o', 'pero', 'si', 'no',
+      'de', 'del', 'a', 'al', 'en', 'con', 'por', 'para', 'sin', 'sobre', 'entre',
+      'mi', 'tu', 'su', 'nuestro', 'vuestro', 'sus', 'mis', 'tus',
+      'que', 'cual', 'quien', 'donde', 'cuando', 'como', 'porque',
+      'es', 'son', 'fue', 'fueron', 'era', 'eran', 'está', 'están',
+      'este', 'esta', 'ese', 'esa', 'aquel', 'aquella', 'esto', 'eso', 'aquello',
+      'hizo', 'hacer', 'todo', 'toda', 'todos', 'todas', 'muy', 'más', 'tan',
+      'ya', 'hoy', 'ayer', 'ahora', 'después', 'antes', 'mira', 'voy'
+    ]);
+
+    // Tokenize and clean query
+    const tokens = lowerQ.replace(/[^\w\sáéíóúñü]/g, '').split(/\s+/).filter(t => t.length > 0);
+    const keywords = tokens.filter(t => !stopWords.has(t));
+
+    // Fallback: If all words were stop words (e.g. "el la"), search normally with full query
+    const validKeywords = keywords.length > 0 ? keywords : tokens;
+
+    // Scoring function
+    const getScore = (item: DataItem) => {
+      let score = 0;
+      const title = item.title.toLowerCase();
+      const summary = item.summary.toLowerCase();
+      const tags = item.tags.map(t => t.toLowerCase());
+
+      validKeywords.forEach(keyword => {
+        if (title.includes(keyword)) score += 10;
+        else if (tags.some(t => t.includes(keyword))) score += 5;
+        else if (summary.includes(keyword)) score += 2;
+      });
+
+      return score;
+    };
+
+    // Filter and Map to [Item, Score]
+    const scoredItems = items
+      .map(item => ({ item, score: getScore(item) }))
+      .filter(entry => entry.score > 0);
+
+    // Sort by Score DESC, then by sortOrder
+    scoredItems.sort((a, b) => {
+      if (a.score !== b.score) return b.score - a.score; // Higher score first
+
+      // Secondary sort based on user preference
+      if (sortOrder === 'name') return a.item.title.localeCompare(b.item.title);
+      if (sortOrder === 'updated') return (b.item.updatedAt || b.item.createdAt) - (a.item.updatedAt || a.item.createdAt);
+      if (sortOrder === 'created') return b.item.createdAt - a.item.createdAt;
+      return 0;
+    });
+
+    return scoredItems.map(entry => entry.item);
+
   }, [items, searchQuery, sortOrder]);
 
   const handleCreate = async (data: Omit<DataItem, 'id' | 'createdAt'>) => {

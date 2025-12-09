@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { DataItem } from '../types';
 import { Button } from './Button';
 import { IconPicker } from './IconPicker';
-import { Save, X, Link as LinkIcon, Download, Hash } from 'lucide-react';
+import { Save, X, Link as LinkIcon, Download, Hash, Sparkles, Loader2 } from 'lucide-react';
+import { expandSummary } from '../services/aiService';
 
 interface DataFormProps {
   initialData?: DataItem | null;
@@ -17,6 +18,7 @@ export const DataForm: React.FC<DataFormProps> = ({ initialData, onSave, onCance
   const [downloadUrl, setDownloadUrl] = useState(initialData?.downloadUrl || '');
   const [visitUrl, setVisitUrl] = useState(initialData?.visitUrl || '');
   const [tagsString, setTagsString] = useState(initialData?.tags.join(', ') || '');
+  const [isExpanding, setIsExpanding] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +69,30 @@ export const DataForm: React.FC<DataFormProps> = ({ initialData, onSave, onCance
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">Resumen / Descripción Principal</label>
+            <div className="flex justify-between items-center mb-2">
+              <label className="block text-sm font-medium text-gray-400">Resumen / Descripción Principal</label>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!summary) return;
+                  setIsExpanding(true);
+                  try {
+                    const expanded = await expandSummary(summary);
+                    setSummary(expanded);
+                  } catch (e: any) {
+                    alert(e.message || "Error al mejorar el resumen.");
+                  } finally {
+                    setIsExpanding(false);
+                  }
+                }}
+                className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1 bg-primary/10 px-3 py-1 rounded-lg border border-primary/20"
+                title="Mejorar y expandir resumen con IA"
+                disabled={!summary || isExpanding}
+              >
+                {isExpanding ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                {isExpanding ? 'Mejorando...' : 'Mejorar con IA'}
+              </button>
+            </div>
             <textarea
               required
               rows={4}
@@ -106,7 +131,9 @@ export const DataForm: React.FC<DataFormProps> = ({ initialData, onSave, onCance
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">Etiquetas</label>
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Etiquetas</label>
+            </div>
             <div className="relative">
               <Hash size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input
@@ -116,6 +143,44 @@ export const DataForm: React.FC<DataFormProps> = ({ initialData, onSave, onCance
                 onChange={(e) => setTagsString(e.target.value)}
                 placeholder="etiqueta1, etiqueta2..."
               />
+            </div>
+            <div className="flex justify-end mt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const stopWords = new Set([
+                    'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas', 'y', 'o', 'pero', 'si', 'no',
+                    'de', 'del', 'a', 'al', 'en', 'con', 'por', 'para', 'sin', 'sobre', 'entre',
+                    'mi', 'tu', 'su', 'nuestro', 'vuestro', 'sus', 'mis', 'tus',
+                    'que', 'cual', 'quien', 'donde', 'cuando', 'como', 'porque',
+                    'es', 'son', 'fue', 'fueron', 'era', 'eran', 'está', 'están',
+                    'este', 'esta', 'ese', 'esa', 'aquel', 'aquella', 'esto', 'eso', 'aquello',
+                    'hizo', 'hacer', 'todo', 'toda', 'todos', 'todas', 'muy', 'más', 'tan',
+                    'ya', 'hoy', 'ayer', 'ahora', 'después', 'antes', 'mira', 'voy'
+                  ]);
+
+                  const text = `${title} ${summary}`.toLowerCase();
+                  // RegEx to remove special chars, keep accents/letters/numbers
+                  const words = text.replace(/[^\w\sáéíóúñü]/g, '').split(/\s+/);
+
+                  const uniqueKeywords = new Set<string>();
+
+                  words.forEach(word => {
+                    if (word.length > 2 && !stopWords.has(word)) {
+                      uniqueKeywords.add(word);
+                    }
+                  });
+
+                  // Limit to 15 tags
+                  const keywordsArray = Array.from(uniqueKeywords).slice(0, 15);
+                  setTagsString(keywordsArray.join(', '));
+                }}
+                className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20"
+                title="Extraer palabras clave automáticamente"
+                disabled={!title && !summary}
+              >
+                <Sparkles size={14} /> Generar Automáticamente
+              </button>
             </div>
           </div>
         </div>

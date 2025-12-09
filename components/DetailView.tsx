@@ -4,9 +4,10 @@ import { Button } from './Button';
 import { TipTapEditor } from './TipTapEditor';
 import { BlockEditorModal } from './BlockEditorModal';
 import { IconPicker } from './IconPicker';
-import { ArrowLeft, Download, ExternalLink, Trash2, Edit2, Plus, Save, X, Check } from 'lucide-react';
+import { ArrowLeft, Download, ExternalLink, Trash2, Edit2, Plus, Save, X, Check, Sparkles } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Editor } from '@tiptap/react';
+import { expandSummary } from '../services/aiService';
 
 interface DetailViewProps {
   item: DataItem;
@@ -211,7 +212,39 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">Resumen</label>
+            <div className="flex justify-between items-center mb-2">
+              <label className="block text-sm font-medium text-gray-400">Resumen</label>
+              <button
+                type="button"
+                onClick={async () => {
+                  const promptText = (typeof editedItem.summary === 'string')
+                    ? editedItem.summary
+                    : document.createElement('div').appendChild(document.createTextNode('Summary')).parentNode?.textContent || '';
+
+                  // Small helper to get text from HTML string if needed
+                  const stripHtml = (html: any) => {
+                    if (typeof html !== 'string') return '';
+                    const tmp = document.createElement("DIV");
+                    tmp.innerHTML = html;
+                    return tmp.textContent || tmp.innerText || "";
+                  };
+
+                  const cleanText = stripHtml(editedItem.summary);
+                  if (!cleanText) return;
+
+                  try {
+                    const expanded = await expandSummary(cleanText);
+                    setEditedItem(prev => ({ ...prev, summary: expanded }));
+                  } catch (e: any) {
+                    alert(e.message || "Error mejorando resumen.");
+                  }
+                }}
+                className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1 bg-primary/10 px-3 py-1 rounded-lg border border-primary/20"
+                title="Mejorar y expandir resumen con IA"
+              >
+                <Sparkles size={14} /> Mejorar con IA
+              </button>
+            </div>
             <div className="bg-background border border-white/10 rounded-lg overflow-hidden focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-colors">
               <TipTapEditor
                 content={editedItem.summary}
@@ -233,6 +266,53 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
               className="w-full bg-background border border-white/10 rounded-lg p-3 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
               placeholder="tag1, tag2, tag3"
             />
+            <div className="flex justify-end mt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const stopWords = new Set([
+                    'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas', 'y', 'o', 'pero', 'si', 'no',
+                    'de', 'del', 'a', 'al', 'en', 'con', 'por', 'para', 'sin', 'sobre', 'entre',
+                    'mi', 'tu', 'su', 'nuestro', 'vuestro', 'sus', 'mis', 'tus',
+                    'que', 'cual', 'quien', 'donde', 'cuando', 'como', 'porque',
+                    'es', 'son', 'fue', 'fueron', 'era', 'eran', 'está', 'están',
+                    'este', 'esta', 'ese', 'esa', 'aquel', 'aquella', 'esto', 'eso', 'aquello',
+                    'hizo', 'hacer', 'todo', 'toda', 'todos', 'todas', 'muy', 'más', 'tan',
+                    'ya', 'hoy', 'ayer', 'ahora', 'después', 'antes', 'mira', 'voy'
+                  ]);
+
+                  // Function to strip HTML tags
+                  const stripHtml = (html: any) => {
+                    if (typeof html !== 'string') return '';
+                    const tmp = document.createElement("DIV");
+                    tmp.innerHTML = html;
+                    return tmp.textContent || tmp.innerText || "";
+                  };
+
+                  const titleText = stripHtml(editedItem.title);
+                  const summaryText = stripHtml(editedItem.summary);
+
+                  const text = `${titleText} ${summaryText}`.toLowerCase();
+                  const words = text.replace(/[^\w\sáéíóúñü]/g, '').split(/\s+/);
+
+                  const uniqueKeywords = new Set<string>();
+
+                  words.forEach(word => {
+                    if (word.length > 2 && !stopWords.has(word)) {
+                      uniqueKeywords.add(word);
+                    }
+                  });
+
+                  // Limit to 15 tags
+                  const keywordsArray = Array.from(uniqueKeywords).slice(0, 15);
+                  setEditedItem(prev => ({ ...prev, tags: keywordsArray }));
+                }}
+                className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20"
+                title="Extraer palabras clave automáticamente"
+              >
+                <Sparkles size={14} /> Generar Automáticamente
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -378,7 +458,9 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
             </div>
 
             <div className="mb-6">
-              <label className="block text-xs font-medium text-gray-500 uppercase mb-2">Resumen</label>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-xs font-medium text-gray-500 uppercase">Resumen</label>
+              </div>
               <TipTapEditor
                 content={editedItem.summary}
                 onUpdate={(content) => {
