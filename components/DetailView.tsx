@@ -7,7 +7,8 @@ import { IconPicker } from './IconPicker';
 import { ArrowLeft, Download, ExternalLink, Trash2, Edit2, Plus, Save, X, Check, Sparkles } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Editor } from '@tiptap/react';
-import { expandSummary } from '../services/aiService';
+import { expandSummary, generateFromInstructions } from '../services/aiService';
+import { AIInstructionModal } from './AIInstructionModal';
 
 interface DetailViewProps {
   item: DataItem;
@@ -34,6 +35,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
   });
 
   const activeEditorRef = useRef<Editor | null>(null);
+  const summaryEditorRef = useRef<Editor | null>(null);
   const summaryTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [pendingModalOpen, setPendingModalOpen] = useState(false);
 
@@ -59,6 +61,17 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
     title: '',
     message: '',
     onConfirm: () => { }
+  });
+
+  // AI Modal State
+  const [aiModal, setAiModal] = useState<{
+    isOpen: boolean;
+    currentContent: string;
+    onGenerate: (content: string) => Promise<void>;
+  }>({
+    isOpen: false,
+    currentContent: '',
+    onGenerate: async () => { }
   });
 
   // Auto-resize summary textarea
@@ -216,31 +229,61 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
               <label className="block text-sm font-medium text-gray-400">Resumen</label>
               <button
                 type="button"
-                onClick={async () => {
-                  const promptText = (typeof editedItem.summary === 'string')
-                    ? editedItem.summary
-                    : document.createElement('div').appendChild(document.createTextNode('Summary')).parentNode?.textContent || '';
+                onClick={() => {
+                  const editor = summaryEditorRef.current;
+                  if (!editor) return;
 
-                  // Small helper to get text from HTML string if needed
-                  const stripHtml = (html: any) => {
-                    if (typeof html !== 'string') return '';
-                    const tmp = document.createElement("DIV");
-                    tmp.innerHTML = html;
-                    return tmp.textContent || tmp.innerText || "";
-                  };
+                  const { selection, doc } = editor.state;
+                  const hasSelection = !selection.empty;
+                  const wholeText = editor.getText();
+                  const isDocEmpty = wholeText.trim().length === 0;
 
-                  const cleanText = stripHtml(editedItem.summary);
-                  if (!cleanText) return;
-
-                  try {
-                    const expanded = await expandSummary(cleanText);
-                    setEditedItem(prev => ({ ...prev, summary: expanded }));
-                  } catch (e: any) {
-                    alert(e.message || "Error mejorando resumen.");
+                  // MODE 1: Edit Selection
+                  if (hasSelection) {
+                    const selectedText = editor.state.doc.textBetween(selection.from, selection.to);
+                    setAiModal({
+                      isOpen: true,
+                      currentContent: selectedText, // Pass selected text to be "improved"
+                      onGenerate: async (instructions) => {
+                        const result = await generateFromInstructions(selectedText, instructions, wholeText);
+                        // Replace only the selection
+                        editor.chain().focus().deleteSelection().insertContent(result).run();
+                        // Update local state to match editor content
+                        setEditedItem(prev => ({ ...prev, summary: editor.getHTML() }));
+                      }
+                    });
+                    return;
                   }
+
+                  // MODE 2: Append to existing text
+                  if (!isDocEmpty) {
+                    setAiModal({
+                      isOpen: true,
+                      currentContent: '', // Empty triggers "Creation" prompts in Modal
+                      onGenerate: async (instructions) => {
+                        // Pass whole text as context, but empty content to generate NEW text
+                        const result = await generateFromInstructions('', instructions, wholeText);
+                        // Append to the end
+                        editor.chain().focus().insertContentAt(doc.content.size, result).run();
+                        setEditedItem(prev => ({ ...prev, summary: editor.getHTML() }));
+                      }
+                    });
+                    return;
+                  }
+
+                  // MODE 3: Create from scratch (Empty doc)
+                  setAiModal({
+                    isOpen: true,
+                    currentContent: '',
+                    onGenerate: async (instructions) => {
+                      const result = await generateFromInstructions('', instructions);
+                      editor.commands.setContent(result);
+                      setEditedItem(prev => ({ ...prev, summary: result }));
+                    }
+                  });
                 }}
                 className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1 bg-primary/10 px-3 py-1 rounded-lg border border-primary/20"
-                title="Mejorar y expandir resumen con IA"
+                title="Mejorar con IA"
               >
                 <Sparkles size={14} /> Mejorar con IA
               </button>
@@ -248,8 +291,13 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
             <div className="bg-background border border-white/10 rounded-lg overflow-hidden focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-colors">
               <TipTapEditor
                 content={editedItem.summary}
-                onUpdate={(content) => setEditedItem(prev => ({ ...prev, summary: content }))}
+                onUpdate={(content) => {
+                  // Only update state if it comes from internal changes that usually sync automaticallly,
+                  // but here we just keep the simple binding.
+                  setEditedItem(prev => ({ ...prev, summary: content }));
+                }}
                 isEditable={true}
+                editorRef={summaryEditorRef}
                 showToolbarOnFocus={true}
                 className="px-3 py-2 min-h-[40px]"
                 dense={true}
@@ -521,6 +569,13 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
           message={confirmDialog.message}
         />
 
+        <AIInstructionModal
+          isOpen={aiModal.isOpen}
+          onClose={() => setAiModal(prev => ({ ...prev, isOpen: false }))}
+          onGenerate={aiModal.onGenerate}
+          currentContent={aiModal.currentContent}
+        />
+
       </div >
 
 
@@ -635,6 +690,13 @@ export const DetailView: React.FC<DetailViewProps> = ({ item, onBack, onUpdate, 
         onConfirm={confirmDialog.onConfirm}
         title={confirmDialog.title}
         message={confirmDialog.message}
+      />
+
+      <AIInstructionModal
+        isOpen={aiModal.isOpen}
+        onClose={() => setAiModal(prev => ({ ...prev, isOpen: false }))}
+        onGenerate={aiModal.onGenerate}
+        currentContent={aiModal.currentContent}
       />
     </div>
   );

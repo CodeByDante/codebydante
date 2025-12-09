@@ -1,10 +1,28 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Use environment variable, fallback to user provided key for this session if needed
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "AIzaSyDyXqHsNwcRssdwvwO7rm8I_dPx1nXpj7E";
+// Use environment variable, or fallback to the key provided by the user for immediate fix
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "AIzaSyCVIbMfcOuhr51iZ5wKGl7y7gBfm-cm63s";
+
+if (!apiKey) {
+  console.warn("VITE_GEMINI_API_KEY is not set.");
+}
 
 const genAI = new GoogleGenerativeAI(apiKey);
-const availableModels = ["gemini-1.5-flash", "gemini-pro", "gemini-1.5-pro-latest"];
+// Prioritize the model that was verified to work: gemini-2.0-flash-exp
+const availableModels = ["gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-pro"];
+
+// Helper to clean response text
+const cleanAIResponse = (text: string): string => {
+  if (!text) return "";
+  // Remove markdown code blocks (```html, ```xml, ```, etc.)
+  let cleaned = text.replace(/```(?:html|xml|markdown)?\s*([\s\S]*?)```/gi, "$1");
+  // Remove any remaining backticks if they are wrapping the whole content
+  cleaned = cleaned.trim();
+  if (cleaned.startsWith("`") && cleaned.endsWith("`")) {
+    cleaned = cleaned.slice(1, -1);
+  }
+  return cleaned;
+};
 
 export const expandSummary = async (text: string): Promise<string> => {
   if (!text || text.length < 3) return text;
@@ -33,7 +51,7 @@ export const expandSummary = async (text: string): Promise<string> => {
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
-      return response.text();
+      return cleanAIResponse(response.text());
     } catch (error: any) {
       console.warn(`Model ${modelName} failed:`, error.message);
       lastError = error;
@@ -54,4 +72,72 @@ export const expandSummary = async (text: string): Promise<string> => {
   }
 
   throw new Error(`Error de IA: ${rawMessage}`);
+};
+
+export const generateFromInstructions = async (
+  currentContent: string,
+  instructions: string,
+  context?: string
+): Promise<string> => {
+  let lastError;
+
+  for (const modelName of availableModels) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+
+      let prompt = "";
+
+      if (!currentContent || currentContent.trim().length === 0) {
+        // Generation mode
+        prompt = `
+          Actúa como un asistente de redacción experto y creativo.
+          
+          Instrucciones del usuario: "${instructions}"
+          
+          Contexto adicional: ${context || "Ninguno"}
+          
+          Tu tarea es generar contenido nuevo basándote EXCLUSIVAMENTE en las instrucciones del usuario.
+          Usa un formato HTML limpio. 
+          - Para listas usa <ul>/<li>.
+          - Para bloques de código usa <pre><code>...</code></pre>.
+          - Para negritas <b> o <strong>.
+          
+          SI EL USUARIO PIDE COMPONENTES ESPECIALES, USA ESTOS FORMATOS:
+          1. **Botones**: <a data-type="custom-button" href="URL" data-variant="visit|download|github" data-background-color="#COLOR">Texto</a>
+          2. **Videos**: <div data-type="universal-video" data-src="URL_YOUTUBE" data-width="100%"></div>
+          3. **Citas (Blockquotes)**: <blockquote style="border-left-color: #COLOR; border-left-width: 4px; background-color: transparent;">Texto</blockquote>
+          
+          NO uses markdown (como ** o #).
+          Responde SOLO con el HTML generado, sin etiquetas <html> ni <body>.
+        `;
+      } else {
+        // Improvement/Edit mode
+        prompt = `
+          Actúa como un editor experto.
+          
+          Contenido actual (HTML):
+          """
+          ${currentContent}
+          """
+          
+          Instrucciones de modificación: "${instructions}"
+          
+          Tu tarea es reescribir, mejorar o modificar el contenido actual siguiendo las instrucciones.
+          Mantén el estilo general pero aplica los cambios solicitados.
+          Devuelve el resultado en HTML válido compatible con Tiptap.
+          
+          Responde SOLO con el contenido mejorado en HTML.
+        `;
+      }
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return cleanAIResponse(response.text());
+    } catch (error: any) {
+      console.warn(`Model ${modelName} failed for instructions:`, error.message);
+      lastError = error;
+    }
+  }
+
+  throw new Error(`Fallo en IA: ${lastError?.message || "No se pudo generar contenido."}`);
 };
